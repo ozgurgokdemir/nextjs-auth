@@ -1,10 +1,11 @@
 'use client';
 
+import * as React from 'react';
 import Link from 'next/link';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 import {
   Form,
@@ -25,30 +26,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
-
-const formSchema = z
-  .object({
-    name: z
-      .string()
-      .min(2, { message: 'Name must be at least 2 characters long' }),
-    email: z.string().email({ message: 'Invalid email address' }),
-    password: z
-      .string()
-      .min(6, { message: 'Password must be at least 6 characters long' })
-      .regex(/[a-zA-Z0-9]/, { message: 'Password must be alphanumeric' }),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ['confirmPassword'],
-    message: 'Passwords do not match',
-  });
+import { signUp } from '@/lib/auth/actions';
+import { signUpSchema, SignUp } from '@/lib/auth/definitions';
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
+  const [isPending, setIsPending] = React.useState(false);
+
+  const form = useForm<SignUp>({
+    resolver: zodResolver(signUpSchema),
     defaultValues: {
       name: '',
       email: '',
@@ -57,18 +45,11 @@ export function SignUpForm({
     },
   });
 
-  async function onSubmit(values: z.infer<typeof formSchema>) {
-    try {
-      console.log(values);
-      toast(
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(values, null, 2)}</code>
-        </pre>
-      );
-    } catch (error) {
-      console.error('Form submission error', error);
-      toast.error('Failed to submit the form. Please try again.');
-    }
+  async function onSubmit(values: SignUp) {
+    setIsPending(true);
+    const { status, message } = await signUp(values);
+    if (status === 'error') toast.error(message);
+    setIsPending(false);
   }
 
   return (
@@ -154,8 +135,12 @@ export function SignUpForm({
                     </FormItem>
                   )}
                 />
-                <Button type="submit" className="w-full">
-                  Create Account
+                <Button type="submit" className="w-full" disabled={isPending}>
+                  {isPending ? (
+                    <Loader2 className="animate-spin" />
+                  ) : (
+                    'Create Account'
+                  )}
                 </Button>
                 <Button variant="outline" className="w-full">
                   Continue with Google
