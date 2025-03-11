@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { ModeToggle } from '@/components/ui/mode-toggle';
+import { UserMenu } from '@/components/user-menu';
+import { ModeToggle } from '@/components/mode-toggle';
 import { getUser } from '@/lib/db/queries';
-import { UserMenu } from './user-menu';
 
 export async function Header() {
   const user = await getUser();
