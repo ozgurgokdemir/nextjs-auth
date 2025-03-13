@@ -1,11 +1,11 @@
-import { Header } from '@/app/(public)/header';
+import { Header } from '@/app/(private)/header';
 import { Footer } from '@/components/footer';
 
-type PublicLayoutProps = {
+type PrivateLayoutProps = {
   children: React.ReactNode;
 };
 
-export default function PublicLayout({ children }: PublicLayoutProps) {
+export default function PrivateLayout({ children }: PrivateLayoutProps) {
   return (
     <>
       <Header />

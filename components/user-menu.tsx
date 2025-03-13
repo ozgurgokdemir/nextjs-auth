@@ -20,11 +20,11 @@ import { signOut } from '@/lib/auth/actions';
 import { getUser } from '@/lib/db/queries';
 import { updateRole } from '@/actions/update-role';
 
-type UserMenuProps = {
-  user: NonNullable<Awaited<ReturnType<typeof getUser>>>;
-};
+export async function UserMenu() {
+  const user = await getUser();
 
-export async function UserMenu({ user }: UserMenuProps) {
+  if (!user) return;
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
