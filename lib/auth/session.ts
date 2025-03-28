@@ -20,16 +20,14 @@ export async function createSession(user: z.infer<typeof sessionSchema>) {
     ex: SESSION_EXPIRATION_SECONDS,
   });
 
-  const expiresAt = new Date(Date.now() + SESSION_EXPIRATION_SECONDS * 1000);
-
   const cookieStore = await cookies();
 
   cookieStore.set(SESSION_COOKIE_KEY, sessionId, {
-    httpOnly: true,
-    secure: true,
-    expires: expiresAt,
-    sameSite: 'lax',
     path: '/',
+    expires: new Date(Date.now() + SESSION_EXPIRATION_SECONDS * 1000),
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
   });
 }
 
@@ -58,14 +56,12 @@ export async function updateSession(user: z.infer<typeof sessionSchema>) {
     ex: SESSION_EXPIRATION_SECONDS,
   });
 
-  const expiresAt = new Date(Date.now() + SESSION_EXPIRATION_SECONDS * 1000);
-
   cookieStore.set(SESSION_COOKIE_KEY, sessionId, {
-    httpOnly: true,
-    secure: true,
-    expires: expiresAt,
-    sameSite: 'lax',
     path: '/',
+    expires: new Date(Date.now() + SESSION_EXPIRATION_SECONDS * 1000),
+    secure: process.env.NODE_ENV === 'production',
+    httpOnly: true,
+    sameSite: 'lax',
   });
 }
 

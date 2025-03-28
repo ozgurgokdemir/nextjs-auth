@@ -15,8 +15,9 @@ export const getUser = cache(async () => {
     },
     select: {
       id: true,
-      name: true,
       email: true,
+      name: true,
+      avatar: true,
       role: true,
     },
   });

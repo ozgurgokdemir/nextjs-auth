@@ -30,7 +30,7 @@ export async function UserMenu() {
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="h-auto p-0 hover:bg-transparent">
           <Avatar>
-            <AvatarImage src="" alt="Profile image" />
+            <AvatarImage src={user.avatar ?? undefined} alt="Profile image" />
             <AvatarFallback>
               {user.name
                 .split(' ')

@@ -26,7 +26,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
-import { signUp } from '@/lib/auth/actions';
+import { oAuthSignIn, signUp } from '@/lib/auth/actions';
 import { signUpSchema, SignUp } from '@/lib/auth/definitions';
 
 export function SignUpForm({
@@ -142,8 +142,21 @@ export function SignUpForm({
                     'Create Account'
                   )}
                 </Button>
-                <Button variant="outline" className="w-full">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={oAuthSignIn.bind(null, 'google')}
+                >
                   Continue with Google
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={oAuthSignIn.bind(null, 'github')}
+                >
+                  Continue with GitHub
                 </Button>
               </div>
               <div className="text-center text-sm">

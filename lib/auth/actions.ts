@@ -10,10 +10,10 @@ import {
   SignIn,
   SignUp,
 } from '@/lib/auth/definitions';
+import { getOAuthClient, Provider } from '@/lib/auth/oauth';
 
 export async function signIn(credentials: SignIn) {
   const { success, data } = signInSchema.safeParse(credentials);
-
   if (!success) {
     return {
       status: 'error',
@@ -33,8 +33,7 @@ export async function signIn(credentials: SignIn) {
       role: true,
     },
   });
-
-  if (!user) {
+  if (!user || !user.password || !user.salt) {
     return {
       status: 'error',
       message: 'Account does not exists',
@@ -46,11 +45,10 @@ export async function signIn(credentials: SignIn) {
     hashedPassword: user.password,
     salt: user.salt,
   });
-
-  if (!isPasswordValid) {
+  if (isPasswordValid) {
     return {
       status: 'error',
-      message: 'Invalid password',
+      message: 'Password is incorrect',
     };
   }
 
@@ -61,7 +59,6 @@ export async function signIn(credentials: SignIn) {
 
 export async function signUp(credentials: SignUp) {
   const { success, data } = signUpSchema.safeParse(credentials);
-
   if (!success) {
     return {
       status: 'error',
@@ -74,7 +71,6 @@ export async function signUp(credentials: SignUp) {
       email: data.email,
     },
   });
-
   if (existingUser) {
     return {
       status: 'error',
@@ -105,5 +101,14 @@ export async function signUp(credentials: SignUp) {
 
 export async function signOut() {
   await deleteSession();
+
   redirect('/');
+}
+
+export async function oAuthSignIn(provider: Provider) {
+  const oAuth = getOAuthClient(provider);
+
+  const url = await oAuth.createAuthUrl();
+
+  redirect(url.toString());
 }
