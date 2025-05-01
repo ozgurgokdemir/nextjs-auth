@@ -20,6 +20,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -28,12 +29,13 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { oAuthSignIn, signIn } from '@/lib/auth/actions';
 import { signInSchema, SignIn } from '@/lib/auth/definitions';
+import { Separator } from '@/components/ui/separator';
 
 export function SignInForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  const [isPending, setIsPending] = React.useState(false);
+  const [isPending, startTransition] = React.useTransition();
 
   const form = useForm<SignIn>({
     resolver: zodResolver(signInSchema),
@@ -44,24 +46,47 @@ export function SignInForm({
   });
 
   async function onSubmit(values: SignIn) {
-    setIsPending(true);
-    const { status, message } = await signIn(values);
-    if (status === 'error') toast.error(message);
-    setIsPending(false);
+    startTransition(async () => {
+      const { error } = await signIn(values);
+      if (error) toast.error(error);
+    });
   }
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Sign In</CardTitle>
+          <CardTitle className="text-xl">Sign In</CardTitle>
           <CardDescription>
             Enter your credentials to access your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="flex flex-col gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={oAuthSignIn.bind(null, 'google')}
+                >
+                  Continue with Google
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={oAuthSignIn.bind(null, 'github')}
+                >
+                  Continue with GitHub
+                </Button>
+              </div>
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-sm text-muted-foreground">or</span>
+                <Separator className="flex-1" />
+              </div>
               <div className="flex flex-col gap-4">
                 <FormField
                   control={form.control}
@@ -72,7 +97,7 @@ export function SignInForm({
                       <FormControl>
                         <Input
                           id="email"
-                          placeholder="john@example.com"
+                          placeholder="Enter your email address"
                           type="email"
                           autoComplete="email"
                           {...field}
@@ -99,7 +124,7 @@ export function SignInForm({
                       <FormControl>
                         <PasswordInput
                           id="password"
-                          placeholder=""
+                          placeholder="Enter your password"
                           autoComplete="new-password"
                           {...field}
                         />
@@ -111,32 +136,18 @@ export function SignInForm({
                 <Button type="submit" className="w-full" disabled={isPending}>
                   {isPending ? <Loader2 className="animate-spin" /> : 'Sign In'}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={oAuthSignIn.bind(null, 'google')}
-                >
-                  Continue with Google
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={oAuthSignIn.bind(null, 'github')}
-                >
-                  Continue with GitHub
-                </Button>
-              </div>
-              <div className="text-center text-sm">
-                Don&apos;t have an account?{' '}
-                <Link href="/signup" className="underline underline-offset-4">
-                  Create account
-                </Link>
               </div>
             </form>
           </Form>
         </CardContent>
+        <CardFooter>
+          <CardDescription>
+            Don&apos;t have an account?{' '}
+            <Button className="p-0 h-auto" variant="link" asChild>
+              <Link href="/signup">Create account</Link>
+            </Button>
+          </CardDescription>
+        </CardFooter>
       </Card>
     </div>
   );

@@ -11,10 +11,10 @@ model User {
   id        String     @id @default(uuid())
   email     String     @unique
   name      String
+  role      Role       @default(USER)
+  avatar    String?
   password  String?
   salt      String?
-  avatar    String?
-  role      Role       @default(USER)
   providers Provider[]
   createdAt DateTime   @default(now())
   updatedAt DateTime   @updatedAt
@@ -29,6 +29,17 @@ model Provider {
   createdAt  DateTime @default(now())
 
   @@unique([provider, providerId])
+}
+
+model PendingUser {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String
+  password  String
+  salt      String
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 }
 
 enum Role {

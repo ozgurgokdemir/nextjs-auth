@@ -20,6 +20,7 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
@@ -28,12 +29,13 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { cn } from '@/lib/utils';
 import { oAuthSignIn, signUp } from '@/lib/auth/actions';
 import { signUpSchema, SignUp } from '@/lib/auth/definitions';
+import { Separator } from '@/components/ui/separator';
 
 export function SignUpForm({
   className,
   ...props
 }: React.ComponentProps<'div'>) {
-  const [isPending, setIsPending] = React.useState(false);
+  const [isPending, startTransition] = React.useTransition();
 
   const form = useForm<SignUp>({
     resolver: zodResolver(signUpSchema),
@@ -41,38 +43,64 @@ export function SignUpForm({
       name: '',
       email: '',
       password: '',
-      confirmPassword: '',
     },
   });
 
   async function onSubmit(values: SignUp) {
-    setIsPending(true);
-    const { status, message } = await signUp(values);
-    if (status === 'error') toast.error(message);
-    setIsPending(false);
+    startTransition(async () => {
+      const { error } = await signUp(values);
+      if (error) toast.error(error);
+    });
   }
 
   return (
     <div className={cn('flex flex-col gap-6', className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">Create an Account</CardTitle>
+          <CardTitle className="text-xl">Create an Account</CardTitle>
           <CardDescription>
             Enter your credentials to create your account.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <div className="flex flex-col gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={oAuthSignIn.bind(null, 'google')}
+                >
+                  Continue with Google
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full"
+                  onClick={oAuthSignIn.bind(null, 'github')}
+                >
+                  Continue with GitHub
+                </Button>
+              </div>
+              <div className="flex items-center gap-3">
+                <Separator className="flex-1" />
+                <span className="text-sm text-muted-foreground">or</span>
+                <Separator className="flex-1" />
+              </div>
               <div className="flex flex-col gap-4">
                 <FormField
                   control={form.control}
                   name="name"
                   render={({ field }) => (
                     <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="name">Full Name</FormLabel>
+                      <FormLabel htmlFor="name">Name</FormLabel>
                       <FormControl>
-                        <Input id="name" placeholder="John Doe" {...field} />
+                        <Input
+                          id="name"
+                          placeholder="Enter your name"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -87,7 +115,7 @@ export function SignUpForm({
                       <FormControl>
                         <Input
                           id="email"
-                          placeholder="john@example.com"
+                          placeholder="Enter your email address"
                           type="email"
                           autoComplete="email"
                           {...field}
@@ -106,27 +134,7 @@ export function SignUpForm({
                       <FormControl>
                         <PasswordInput
                           id="password"
-                          placeholder=""
-                          autoComplete="new-password"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="confirmPassword"
-                  render={({ field }) => (
-                    <FormItem className="grid gap-2">
-                      <FormLabel htmlFor="confirmPassword">
-                        Confirm Password
-                      </FormLabel>
-                      <FormControl>
-                        <PasswordInput
-                          id="confirmPassword"
-                          placeholder=""
+                          placeholder="Enter your password"
                           autoComplete="new-password"
                           {...field}
                         />
@@ -139,35 +147,21 @@ export function SignUpForm({
                   {isPending ? (
                     <Loader2 className="animate-spin" />
                   ) : (
-                    'Create Account'
+                    'Continue'
                   )}
                 </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={oAuthSignIn.bind(null, 'google')}
-                >
-                  Continue with Google
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="w-full"
-                  onClick={oAuthSignIn.bind(null, 'github')}
-                >
-                  Continue with GitHub
-                </Button>
-              </div>
-              <div className="text-center text-sm">
-                Already have an account?{' '}
-                <Link href="/signin" className="underline">
-                  Sign In
-                </Link>
               </div>
             </form>
           </Form>
         </CardContent>
+        <CardFooter>
+          <CardDescription>
+            Already have an account?{' '}
+            <Button className="p-0 h-auto" variant="link" asChild>
+              <Link href="/signin">Sign In</Link>
+            </Button>
+          </CardDescription>
+        </CardFooter>
       </Card>
     </div>
   );
