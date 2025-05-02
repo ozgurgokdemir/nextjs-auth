@@ -30,6 +30,8 @@ import { cn } from '@/lib/utils';
 import { oAuthSignIn, signUp } from '@/lib/auth/actions';
 import { signUpSchema, SignUp } from '@/lib/auth/definitions';
 import { Separator } from '@/components/ui/separator';
+import Google from '@/components/icons/google';
+import GitHub from '@/components/icons/github';
 
 export function SignUpForm({
   className,
@@ -65,22 +67,24 @@ export function SignUpForm({
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <div className="flex flex-col gap-3">
+              <div className="flex gap-2">
                 <Button
+                  className="flex-1"
                   type="button"
                   variant="outline"
-                  className="w-full"
                   onClick={oAuthSignIn.bind(null, 'google')}
                 >
-                  Continue with Google
+                  <Google className="size-4" />
+                  Google
                 </Button>
                 <Button
+                  className="flex-1"
                   type="button"
                   variant="outline"
-                  className="w-full"
                   onClick={oAuthSignIn.bind(null, 'github')}
                 >
-                  Continue with GitHub
+                  <GitHub className="size-4 text-black dark:text-white" />
+                  GitHub
                 </Button>
               </div>
               <div className="flex items-center gap-3">
