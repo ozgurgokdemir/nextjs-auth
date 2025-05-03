@@ -118,12 +118,13 @@ export function SignInForm({
                     <FormItem className="grid gap-2">
                       <div className="flex items-center">
                         <FormLabel htmlFor="password">Password</FormLabel>
-                        <Link
-                          href="#"
-                          className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
+                        <Button
+                          className="p-0 h-auto ml-auto font-normal"
+                          variant="link"
+                          asChild
                         >
-                          Forgot your password?
-                        </Link>
+                          <Link href="/password-reset">Forgot password?</Link>
+                        </Button>
                       </div>
                       <FormControl>
                         <PasswordInput

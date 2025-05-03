@@ -3,7 +3,12 @@ import { getSession, updateSession } from '@/lib/auth/session';
 
 const ROUTES = {
   protected: ['/dashboard'],
-  authentication: ['/signin', '/signup'],
+  authentication: [
+    '/signin',
+    '/signup',
+    '/email-verification',
+    '/password-reset',
+  ],
 };
 
 const REDIRECTS = {

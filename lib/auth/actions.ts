@@ -12,6 +12,8 @@ import {
   emailVerificationSchema,
   EmailVerification,
   emailSchema,
+  PasswordReset,
+  passwordResetSchema,
 } from '@/lib/auth/definitions';
 import { getOAuthClient, Provider } from '@/lib/auth/oauth';
 import {
@@ -21,6 +23,10 @@ import {
   deleteVerificationEmailCookie,
   updateVerificationCode,
 } from '@/lib/auth/email-verification';
+import {
+  upsertPasswordReset,
+  sendPasswordResetEmail,
+} from '@/lib/auth/password-reset';
 
 export async function signIn(credentials: SignIn) {
   const { success, data } = signInSchema.safeParse(credentials);
@@ -44,7 +50,7 @@ export async function signIn(credentials: SignIn) {
   });
   if (!user || !user.password || !user.salt) {
     return {
-      error: 'User does not exists',
+      error: 'User does not exist',
     };
   }
 
@@ -113,8 +119,8 @@ export async function oAuthSignIn(provider: Provider) {
   redirect(url.toString());
 }
 
-export async function verifyEmail(credentials: EmailVerification) {
-  const { success, data } = emailVerificationSchema.safeParse(credentials);
+export async function verifyEmail(args: EmailVerification) {
+  const { success, data } = emailVerificationSchema.safeParse(args);
   if (!success) {
     return {
       error: 'Invalid credentials',
@@ -149,7 +155,7 @@ export async function verifyEmail(credentials: EmailVerification) {
 
   const existingUser = await prisma.user.findUnique({
     where: {
-      email: credentials.email,
+      email: data.email,
     },
   });
   if (existingUser) {
@@ -191,6 +197,106 @@ export async function resendEmailVerification(email: string) {
     };
   } catch (error) {
     console.error(error);
+    return {
+      status: 'error',
+      message: 'Something went wrong!',
+    };
+  }
+}
+
+export async function resetPassword(args: PasswordReset) {
+  const { success, data } = passwordResetSchema.safeParse(args);
+  if (!success) {
+    return {
+      error: 'Invalid token or password',
+    };
+  }
+
+  const passwordReset = await prisma.passwordReset.findFirst({
+    where: {
+      token: data.token,
+    },
+    select: {
+      id: true,
+      email: true,
+      expiresAt: true,
+    },
+  });
+  if (!passwordReset) {
+    return {
+      error: 'The token is invalid',
+    };
+  }
+
+  if (passwordReset.expiresAt < new Date()) {
+    await prisma.passwordReset.delete({
+      where: {
+        id: passwordReset.id,
+      },
+    });
+    return {
+      error: 'The token is expired',
+    };
+  }
+
+  const salt = createSalt();
+  const hashedPassword = await hashPassword(data.password, salt);
+
+  const [user] = await prisma.$transaction([
+    prisma.user.update({
+      where: {
+        email: passwordReset.email,
+      },
+      data: {
+        password: hashedPassword,
+        salt,
+      },
+      select: {
+        id: true,
+        role: true,
+      },
+    }),
+    prisma.passwordReset.delete({
+      where: {
+        id: passwordReset.id,
+      },
+    }),
+  ]);
+
+  await createSession(user);
+
+  redirect('/dashboard');
+}
+
+export async function sendPasswordReset(email: string) {
+  try {
+    const validatedEmail = emailSchema.parse(email);
+
+    const existingUser = await prisma.user.findUnique({
+      where: {
+        email: validatedEmail,
+      },
+      select: {
+        email: true,
+      },
+    });
+    if (!existingUser) {
+      return {
+        status: 'error',
+        message: 'User does not exist',
+      };
+    }
+
+    const { token } = await upsertPasswordReset(validatedEmail);
+    await sendPasswordResetEmail(validatedEmail, token);
+
+    return {
+      status: 'success',
+      message: 'Password reset email sent',
+    };
+  } catch (error) {
+    console.error(error);
+
     return {
       status: 'error',
       message: 'Something went wrong!',
