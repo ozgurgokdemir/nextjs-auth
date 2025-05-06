@@ -15,7 +15,8 @@ export const passwordSchema = z
 export const nameSchema = z
   .string()
   .trim()
-  .min(2, { message: 'Name must be at least 2 characters long' });
+  .min(2, { message: 'Name must be at least 2 characters long' })
+  .max(50, { message: 'Name must be at most 50 characters long' });
 
 export const codeSchema = z
   .string()
