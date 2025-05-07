@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { getUser } from '@/lib/db/queries';
 import { SettingItem, SettingList } from './setting';
 import { UpdateNameDialog } from './update-name-dialog';
+import { UpdatePasswordDialog } from './update-password-dialog';
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -29,7 +30,12 @@ export default async function DashboardPage() {
             />
           </SettingList>
           <SettingList title="Security">
-            <SettingItem title="Password" description="Change your password" />
+            <UpdatePasswordDialog>
+              <SettingItem
+                title="Password"
+                description="Change your password"
+              />
+            </UpdatePasswordDialog>
             <SettingItem
               title="Two-factor authentication"
               description="Enable two-factor authentication"

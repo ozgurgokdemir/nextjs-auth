@@ -59,7 +59,7 @@ export async function signIn(credentials: SignIn) {
     hashedPassword: user.password,
     salt: user.salt,
   });
-  if (isPasswordValid) {
+  if (!isPasswordValid) {
     return {
       error: 'Password is incorrect',
     };
