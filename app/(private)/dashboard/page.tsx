@@ -4,6 +4,7 @@ import { getUser } from '@/lib/db/queries';
 import { SettingItem, SettingList } from './setting';
 import { UpdateNameDialog } from './update-name-dialog';
 import { UpdatePasswordDialog } from './update-password-dialog';
+import { ConnectAccountDialog } from './connect-account-dialog';
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -22,27 +23,36 @@ export default async function DashboardPage() {
         <div className="max-w-3xl mx-auto flex flex-col gap-9">
           <SettingList title="Profile">
             <UpdateNameDialog currentName={user.name}>
-              <SettingItem title="Name" description={user.name} />
+              <SettingItem
+                title="Name"
+                description={`Your current display name is ${user.name}`}
+              />
             </UpdateNameDialog>
             <SettingItem
               title="Avatar"
-              description="Change your profile photo"
+              description="Upload or change your profile picture to personalize your account"
             />
           </SettingList>
-          <SettingList title="Security">
+          <SettingList title="Account">
             <UpdatePasswordDialog>
               <SettingItem
                 title="Password"
-                description="Change your password"
+                description="Update your password to keep your account secure"
               />
             </UpdatePasswordDialog>
             <SettingItem
               title="Two-factor authentication"
-              description="Enable two-factor authentication"
+              description="Add an extra layer of security to your account"
             />
+            <ConnectAccountDialog providers={user.providers}>
+              <SettingItem
+                title="Connect account"
+                description="Connect your social media accounts for easy sign-in"
+              />
+            </ConnectAccountDialog>
             <SettingItem
               title="Delete account"
-              description="Permanently delete your account"
+              description="Permanently remove your account and all associated data"
             />
           </SettingList>
         </div>

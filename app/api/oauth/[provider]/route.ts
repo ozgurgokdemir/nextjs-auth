@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation';
 import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
-import { createSession } from '@/lib/auth/session';
+import { createSession, getSession } from '@/lib/auth/session';
 import { getOAuthClient, providerSchema } from '@/lib/auth/oauth';
 import { prisma } from '@/lib/db/prisma';
 
@@ -26,11 +26,11 @@ export async function GET(
     const oAuthUser = await oAuth.getUser(state, code);
     if (!oAuthUser) throw new Error('Failed to get user from OAuth provider');
 
+    const session = await getSession();
+
     const user = await prisma.$transaction(async (tx) => {
       const existingUser = await tx.user.findUnique({
-        where: {
-          email: oAuthUser.email,
-        },
+        where: session ? { id: session.id } : { email: oAuthUser.email },
         include: {
           providers: true,
         },

@@ -84,3 +84,27 @@ export async function updateUserPassword(password: string) {
     message: 'Your password is updated',
   };
 }
+
+export async function disconnectProvider(provider: string) {
+  const session = await getSession();
+  if (!session) {
+    return {
+      status: 'error',
+      message: 'User is not authenticated',
+    };
+  }
+
+  await prisma.provider.deleteMany({
+    where: {
+      userId: session.id,
+      provider,
+    },
+  });
+
+  await updateSession(session);
+
+  return {
+    status: 'success',
+    message: 'Your account is disconnected',
+  };
+}

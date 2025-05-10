@@ -9,7 +9,7 @@ export const getUser = cache(async () => {
 
   if (!session) return;
 
-  const user = await prisma.user.findUnique({
+  return await prisma.user.findUnique({
     where: {
       id: session.id,
     },
@@ -19,10 +19,11 @@ export const getUser = cache(async () => {
       name: true,
       avatar: true,
       role: true,
+      providers: {
+        select: {
+          provider: true,
+        },
+      },
     },
   });
-
-  if (user && user.id === session.id) {
-    return user;
-  }
 });
