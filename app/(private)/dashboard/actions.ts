@@ -1,9 +1,15 @@
 'use server';
 
+import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
-import { getSession, updateSession } from '@/lib/auth/session';
+import { deleteSession, getSession, updateSession } from '@/lib/auth/session';
 import { createSalt, hashPassword } from '@/lib/auth/password';
-import { nameSchema, passwordSchema } from '@/lib/auth/definitions';
+import { codeSchema, nameSchema, passwordSchema } from '@/lib/auth/definitions';
+import {
+  sendDeleteAccountEmail,
+  upsertDeleteAccount,
+} from '@/lib/auth/delete-account';
+import { getUser } from '@/lib/db/queries';
 
 export async function updateUserName(name: string) {
   const { success, data, error } = nameSchema.safeParse(name);
@@ -107,4 +113,90 @@ export async function disconnectProvider(provider: string) {
     status: 'success',
     message: 'Your account is disconnected',
   };
+}
+
+export async function deleteAccount(code: string) {
+  const { success, data, error } = codeSchema.safeParse(code);
+  if (!success) {
+    return {
+      error: error.flatten().formErrors[0],
+    };
+  }
+
+  const session = await getSession();
+  if (!session) {
+    return {
+      error: 'User is not authenticated',
+    };
+  }
+
+  const deleteAccount = await prisma.deleteAccount.findUnique({
+    where: {
+      userId: session.id,
+    },
+  });
+  if (!deleteAccount) {
+    return {
+      error: 'The entered code is expired',
+    };
+  }
+  if (deleteAccount.expiresAt < new Date()) {
+    await prisma.deleteAccount.delete({
+      where: {
+        id: deleteAccount.id,
+      },
+    });
+    return {
+      error: 'The entered code is expired',
+    };
+  }
+  if (deleteAccount.code !== data) {
+    return {
+      error: 'The entered code is incorrect',
+    };
+  }
+
+  await prisma.$transaction([
+    prisma.user.delete({
+      where: {
+        id: session.id,
+      },
+    }),
+    prisma.deleteAccount.delete({
+      where: {
+        userId: session.id,
+      },
+    }),
+  ]);
+
+  await deleteSession();
+
+  redirect('/');
+}
+
+export async function sendDeleteAccount() {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return {
+        status: 'error',
+        message: 'User is not authenticated',
+      };
+    }
+
+    const { code } = await upsertDeleteAccount(user.id);
+    await sendDeleteAccountEmail(user.email, code);
+
+    return {
+      status: 'success',
+      message: 'Delete account email sent',
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      status: 'error',
+      message: 'Something went wrong!',
+    };
+  }
 }

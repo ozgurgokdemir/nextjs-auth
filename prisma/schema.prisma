@@ -52,6 +52,14 @@ model PasswordReset {
   @@unique([email, token])
 }
 
+model DeleteAccount {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  code      String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
 enum Role {
   USER
   ADMIN

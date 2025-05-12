@@ -5,6 +5,7 @@ import { SettingItem, SettingList } from './setting';
 import { UpdateNameDialog } from './update-name-dialog';
 import { UpdatePasswordDialog } from './update-password-dialog';
 import { ConnectAccountDialog } from './connect-account-dialog';
+import { DeleteAccountDialog } from './delete-account-dialog';
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -50,10 +51,12 @@ export default async function DashboardPage() {
                 description="Connect your social media accounts for easy sign-in"
               />
             </ConnectAccountDialog>
-            <SettingItem
-              title="Delete account"
-              description="Permanently remove your account and all associated data"
-            />
+            <DeleteAccountDialog email={user.email}>
+              <SettingItem
+                title="Delete account"
+                description="Permanently remove your account and all associated data"
+              />
+            </DeleteAccountDialog>
           </SettingList>
         </div>
       </div>
