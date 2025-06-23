@@ -10,6 +10,7 @@ import {
   upsertDeleteAccount,
 } from '@/lib/auth/delete-account';
 import { getUser } from '@/lib/db/queries';
+import { deleteTwoFactorCookie } from '@/lib/auth/two-factor';
 
 export async function updateUserName(name: string) {
   const { success, data, error } = nameSchema.safeParse(name);
@@ -58,20 +59,37 @@ export async function updateUserPassword(password: string) {
     };
   }
 
+  const user = await getUser();
   const session = await getSession();
-  if (!session) {
+  if (!user || !session) {
     return {
       status: 'error',
       message: 'User is not authenticated',
     };
   }
+  if (user.isTwoFactorEnabled) {
+    if (!session.isTwoFactorVerified || !session.twoFactorExpiresAt) {
+      return {
+        status: 'error',
+        message: 'Two-factor authentication is enabled, please verify first',
+        requires2FA: true,
+      };
+    }
+    if (session.twoFactorExpiresAt && session.twoFactorExpiresAt < new Date()) {
+      return {
+        status: 'error',
+        message: 'Your two-factor authentication is expired',
+        requires2FA: true,
+      };
+    }
+  }
 
   const salt = createSalt();
   const hashedPassword = await hashPassword(data, salt);
 
-  const user = await prisma.user.update({
+  await prisma.user.update({
     where: {
-      id: session.id,
+      id: user.id,
     },
     data: {
       password: hashedPassword,
@@ -83,11 +101,97 @@ export async function updateUserPassword(password: string) {
     },
   });
 
-  await updateSession(user);
-
   return {
     status: 'success',
     message: 'Your password is updated',
+  };
+}
+
+export async function enableTwoFactor() {
+  const user = await getUser();
+  const session = await getSession();
+  if (!user || !session) {
+    return {
+      status: 'error',
+      message: 'User is not authenticated',
+    };
+  }
+  if (user.isTwoFactorEnabled) {
+    return {
+      status: 'error',
+      message: 'Two-factor authentication is already enabled',
+    };
+  }
+  // if (
+  //   !session.twoFactorExpiresAt ||
+  //   (session.twoFactorExpiresAt && session.twoFactorExpiresAt < new Date())
+  // ) {
+  //   return {
+  //     status: 'error',
+  //     message: 'Your two-factor authentication is expired',
+  //     requires2FA: true,
+  //   };
+  // }
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      isTwoFactorEnabled: true,
+    },
+  });
+
+  await updateSession(updatedUser);
+  await deleteTwoFactorCookie();
+
+  return {
+    status: 'success',
+    message: 'Two-factor authentication is enabled',
+  };
+}
+
+export async function disableTwoFactor() {
+  const user = await getUser();
+  const session = await getSession();
+  if (!user || !session) {
+    return {
+      status: 'error',
+      message: 'User is not authenticated',
+    };
+  }
+  if (!user.isTwoFactorEnabled) {
+    return {
+      status: 'error',
+      message: 'Two-factor authentication is not enabled',
+    };
+  }
+  if (
+    !session.twoFactorExpiresAt ||
+    (session.twoFactorExpiresAt && session.twoFactorExpiresAt < new Date())
+  ) {
+    return {
+      status: 'error',
+      message: 'Your two-factor authentication is expired',
+      requires2FA: true,
+    };
+  }
+
+  const updatedUser = await prisma.user.update({
+    where: {
+      id: user.id,
+    },
+    data: {
+      isTwoFactorEnabled: false,
+    },
+  });
+
+  await updateSession(updatedUser);
+  await deleteTwoFactorCookie();
+
+  return {
+    status: 'success',
+    message: 'Two-factor authentication is disabled',
   };
 }
 

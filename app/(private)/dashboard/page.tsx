@@ -6,6 +6,7 @@ import { UpdateNameDialog } from './update-name-dialog';
 import { UpdatePasswordDialog } from './update-password-dialog';
 import { ConnectAccountDialog } from './connect-account-dialog';
 import { DeleteAccountDialog } from './delete-account-dialog';
+import { TwoFactorAuthenticationDialog } from './two-factor-authentication-dialog';
 
 export default async function DashboardPage() {
   const user = await getUser();
@@ -35,16 +36,32 @@ export default async function DashboardPage() {
             />
           </SettingList>
           <SettingList title="Account">
-            <UpdatePasswordDialog>
+            <UpdatePasswordDialog hasPassword={user.hasPassword}>
               <SettingItem
                 title="Password"
-                description="Update your password to keep your account secure"
+                description={
+                  user.hasPassword
+                    ? 'Update your password to keep your account secure'
+                    : 'Create a secure password to protect your account'
+                }
               />
             </UpdatePasswordDialog>
-            <SettingItem
-              title="Two-factor authentication"
-              description="Add an extra layer of security to your account"
-            />
+            <TwoFactorAuthenticationDialog
+              isTwoFactorEnabled={user.isTwoFactorEnabled}
+            >
+              <SettingItem
+                title="Two-factor authentication"
+                description={(() => {
+                  if (!user.hasPassword) {
+                    return 'Set up a password in order to enable two-factor authentication';
+                  }
+                  return user.isTwoFactorEnabled
+                    ? 'Remove the extra layer of security from your account'
+                    : 'Add an extra layer of security to your account';
+                })()}
+                disabled={!user.hasPassword}
+              />
+            </TwoFactorAuthenticationDialog>
             <ConnectAccountDialog providers={user.providers}>
               <SettingItem
                 title="Connect account"

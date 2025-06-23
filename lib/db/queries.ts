@@ -9,7 +9,7 @@ export const getUser = cache(async () => {
 
   if (!session) return;
 
-  return await prisma.user.findUnique({
+  const user = await prisma.user.findUnique({
     where: {
       id: session.id,
     },
@@ -18,12 +18,26 @@ export const getUser = cache(async () => {
       email: true,
       name: true,
       avatar: true,
-      role: true,
+      password: true,
       providers: {
         select: {
           provider: true,
         },
       },
+      isTwoFactorEnabled: true,
+      role: true,
     },
   });
+  if (!user) return;
+
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    avatar: user.avatar,
+    hasPassword: Boolean(user.password),
+    providers: user.providers.map(({ provider }) => provider),
+    isTwoFactorEnabled: user.isTwoFactorEnabled,
+    role: user.role,
+  };
 });

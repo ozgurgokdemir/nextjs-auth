@@ -8,6 +8,7 @@ const ROUTES = {
     '/signup',
     '/email-verification',
     '/password-reset',
+    '/two-factor',
   ],
 };
 

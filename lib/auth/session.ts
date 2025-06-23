@@ -5,18 +5,24 @@ import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { redis } from '@/lib/db/redis';
 
-const SESSION_COOKIE_KEY = 'session-id';
+const SESSION_COOKIE_KEY = 'session_id';
+const SESSION_REDIS_KEY = 'session';
 const SESSION_EXPIRATION_SECONDS = 60 * 60 * 24 * 7;
 
 export const sessionSchema = z.object({
   id: z.string(),
   role: z.enum(['USER', 'ADMIN']),
+  isTwoFactorVerified: z.boolean().optional(),
+  twoFactorExpiresAt: z.coerce.date().optional(),
 });
 
 export async function createSession(user: z.infer<typeof sessionSchema>) {
-  const sessionId = crypto.randomBytes(512).toString('hex').normalize();
+  const { success, data } = sessionSchema.safeParse(user);
+  if (!success) return;
 
-  await redis.set(`session:${sessionId}`, sessionSchema.parse(user), {
+  const sessionId = crypto.randomBytes(512).toString('hex');
+
+  await redis.set(`${SESSION_REDIS_KEY}:${sessionId}`, data, {
     ex: SESSION_EXPIRATION_SECONDS,
   });
 
@@ -35,10 +41,9 @@ export async function getSession() {
   const cookieStore = await cookies();
 
   const sessionId = cookieStore.get(SESSION_COOKIE_KEY)?.value;
-
   if (!sessionId) return;
 
-  const session = await redis.get(`session:${sessionId}`);
+  const session = await redis.get(`${SESSION_REDIS_KEY}:${sessionId}`);
 
   const { data } = sessionSchema.safeParse(session);
 
@@ -46,13 +51,15 @@ export async function getSession() {
 }
 
 export async function updateSession(user: z.infer<typeof sessionSchema>) {
+  const { success, data } = sessionSchema.safeParse(user);
+  if (!success) return;
+
   const cookieStore = await cookies();
 
   const sessionId = cookieStore.get(SESSION_COOKIE_KEY)?.value;
-
   if (!sessionId) return;
 
-  await redis.set(`session:${sessionId}`, sessionSchema.parse(user), {
+  await redis.set(`${SESSION_REDIS_KEY}:${sessionId}`, data, {
     ex: SESSION_EXPIRATION_SECONDS,
   });
 
@@ -69,10 +76,9 @@ export async function deleteSession() {
   const cookieStore = await cookies();
 
   const sessionId = cookieStore.get(SESSION_COOKIE_KEY)?.value;
-
   if (!sessionId) return;
 
-  await redis.del(`session:${sessionId}`);
+  await redis.del(`${SESSION_REDIS_KEY}:${sessionId}`);
 
   cookieStore.delete(SESSION_COOKIE_KEY);
 }

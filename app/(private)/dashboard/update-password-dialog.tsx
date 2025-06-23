@@ -8,6 +8,7 @@ import { Loader2 } from 'lucide-react';
 
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
@@ -26,16 +27,23 @@ import { PasswordInput } from '@/components/ui/password-input';
 import { Button } from '@/components/ui/button';
 import { passwordSchema } from '@/lib/auth/definitions';
 import { updateUserPassword } from './actions';
+import { useTwoFactor } from '@/components/two-factor-provider';
 
 const updatePasswordSchema = z.object({
   password: passwordSchema,
 });
 type UpdatePassword = z.infer<typeof updatePasswordSchema>;
 
+interface UpdatePasswordDialogProps
+  extends React.ComponentProps<typeof Dialog> {
+  hasPassword: boolean;
+}
+
 export function UpdatePasswordDialog({
+  hasPassword,
   children,
   ...props
-}: React.ComponentProps<typeof Dialog>) {
+}: UpdatePasswordDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
 
@@ -46,9 +54,22 @@ export function UpdatePasswordDialog({
     },
   });
 
+  const { startVerification } = useTwoFactor();
+
   async function onSubmit({ password }: UpdatePassword) {
     startTransition(async () => {
-      const { status, message } = await updateUserPassword(password);
+      const { status, message, requires2FA } = await updateUserPassword(
+        password
+      );
+      if (requires2FA) {
+        startVerification(async () => {
+          startTransition(async () => {
+            const { status, message } = await updateUserPassword(password);
+            if (status === 'error') form.setError('password', { message });
+            if (status === 'success') setOpen(false);
+          });
+        });
+      }
       if (status === 'error') form.setError('password', { message });
       if (status === 'success') setOpen(false);
     });
@@ -66,9 +87,13 @@ export function UpdatePasswordDialog({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Set new password</DialogTitle>
+          <DialogTitle>
+            {hasPassword ? 'Change your password' : 'Set your password'}
+          </DialogTitle>
           <DialogDescription>
-            Enter a new password below to change your password.
+            {hasPassword
+              ? 'Update your password to keep your account secure. Make sure it’s strong and easy for you to remember.'
+              : 'Create a secure password to protect your account. Make sure it’s strong and easy for you to remember.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -81,7 +106,11 @@ export function UpdatePasswordDialog({
                   <FormControl>
                     <PasswordInput
                       id="password"
-                      placeholder="Enter your new password"
+                      placeholder={
+                        hasPassword
+                          ? 'Enter your new password'
+                          : 'Enter your password'
+                      }
                       autoComplete="new-password"
                       autoFocus
                       {...field}
@@ -94,16 +123,20 @@ export function UpdatePasswordDialog({
           </form>
         </Form>
         <DialogFooter>
+          <DialogClose asChild>
+            <Button type="button" variant="outline" className="flex-1">
+              Cancel
+            </Button>
+          </DialogClose>
           <Button
-            className="w-full"
+            className="flex-1"
             disabled={isPending}
             onClick={form.handleSubmit(onSubmit)}
           >
-            {isPending ? (
-              <Loader2 className="animate-spin" />
-            ) : (
-              'Update password'
-            )}
+            {(() => {
+              if (isPending) return <Loader2 className="animate-spin" />;
+              return hasPassword ? 'Update' : 'Create';
+            })()}
           </Button>
         </DialogFooter>
       </DialogContent>

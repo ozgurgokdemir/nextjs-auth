@@ -3,18 +3,12 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { createSalt, hashPassword, verifyPassword } from '@/lib/auth/password';
-import { createSession, deleteSession } from '@/lib/auth/session';
 import {
-  signInSchema,
-  SignIn,
-  signUpSchema,
-  SignUp,
-  emailVerificationSchema,
-  EmailVerification,
-  emailSchema,
-  PasswordReset,
-  passwordResetSchema,
-} from '@/lib/auth/definitions';
+  createSession,
+  deleteSession,
+  getSession,
+  updateSession,
+} from '@/lib/auth/session';
 import { getOAuthClient, Provider } from '@/lib/auth/oauth';
 import {
   upsertPendingUser,
@@ -27,6 +21,29 @@ import {
   upsertPasswordReset,
   sendPasswordResetEmail,
 } from '@/lib/auth/password-reset';
+import {
+  upsertTwoFactor,
+  createTwoFactorCookie,
+  sendTwoFactorEmail,
+  getTwoFactorIdFromCookie,
+  getTwoFactor,
+  deleteTwoFactor,
+  deleteTwoFactorCookie,
+  TWO_FACTOR_EXPIRATION_SECONDS,
+} from '@/lib/auth/two-factor';
+import {
+  signInSchema,
+  SignIn,
+  signUpSchema,
+  SignUp,
+  emailVerificationSchema,
+  EmailVerification,
+  emailSchema,
+  PasswordReset,
+  passwordResetSchema,
+  codeSchema,
+} from '@/lib/auth/definitions';
+import { getUser } from '@/lib/db/queries';
 
 export async function signIn(credentials: SignIn) {
   const { success, data } = signInSchema.safeParse(credentials);
@@ -45,6 +62,7 @@ export async function signIn(credentials: SignIn) {
       email: true,
       password: true,
       salt: true,
+      isTwoFactorEnabled: true,
       role: true,
     },
   });
@@ -63,6 +81,16 @@ export async function signIn(credentials: SignIn) {
     return {
       error: 'Password is incorrect',
     };
+  }
+
+  if (user.isTwoFactorEnabled) {
+    const { id, code } = await upsertTwoFactor(user.id);
+
+    await createTwoFactorCookie(id);
+
+    await sendTwoFactorEmail(user.email, code);
+
+    redirect('/two-factor');
   }
 
   await createSession(user);
@@ -135,13 +163,11 @@ export async function verifyEmail(args: EmailVerification) {
   if (!pendingUser) {
     redirect('/signup');
   }
-
   if (pendingUser.code !== data.code) {
     return {
       error: 'The entered code is incorrect',
     };
   }
-
   if (pendingUser.expiresAt < new Date()) {
     await prisma.pendingUser.delete({
       where: {
@@ -289,6 +315,109 @@ export async function sendPasswordReset(email: string) {
 
     const { token } = await upsertPasswordReset(validatedEmail);
     await sendPasswordResetEmail(validatedEmail, token);
+
+    return {
+      status: 'success',
+      message: 'Password reset email sent',
+    };
+  } catch (error) {
+    console.error(error);
+
+    return {
+      status: 'error',
+      message: 'Something went wrong!',
+    };
+  }
+}
+
+export async function verifyTwoFactor(code: string) {
+  const { success, data } = codeSchema.safeParse(code);
+  if (!success) {
+    return {
+      error: 'Two-factor authentication code is invalid',
+    };
+  }
+
+  const twoFactorId = await getTwoFactorIdFromCookie();
+  if (!twoFactorId) {
+    return {
+      error: 'Two-factor authentication code is expired',
+    };
+  }
+
+  const twoFactor = await getTwoFactor(twoFactorId);
+  if (!twoFactor) {
+    return {
+      error: 'Two-factor authentication code is expired',
+    };
+  }
+  if (twoFactor.code !== data) {
+    return {
+      error: 'Two-factor authentication code is incorrect',
+    };
+  }
+
+  await deleteTwoFactor(twoFactor.id);
+
+  await deleteTwoFactorCookie();
+
+  if (twoFactor.expiresAt < new Date()) {
+    return {
+      error: 'Two-factor authentication code is expired',
+    };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: {
+      id: twoFactor.userId,
+    },
+  });
+  if (!user) {
+    return {
+      error: 'User does not exist',
+    };
+  }
+
+  const sessionData = {
+    ...user,
+    isTwoFactorVerified: true,
+    twoFactorExpiresAt: new Date(
+      Date.now() + TWO_FACTOR_EXPIRATION_SECONDS * 1000
+    ),
+  };
+
+  const session = await getSession();
+  if (session) {
+    if (user.id !== session.id) {
+      return {
+        error: 'User does not match the current session',
+      };
+    }
+    await updateSession(sessionData);
+  } else {
+    await createSession(sessionData);
+
+    redirect('/dashboard');
+  }
+
+  return {};
+}
+
+export async function sendTwoFactor() {
+  try {
+    const user = await getUser();
+    if (!user) {
+      return {
+        status: 'error',
+        message: 'User is not authenticated',
+      };
+    }
+
+    const { id, code } = await upsertTwoFactor(user.id);
+
+    await createTwoFactorCookie(id);
+
+    await sendTwoFactorEmail(user.email, code);
 
     return {
       status: 'success',

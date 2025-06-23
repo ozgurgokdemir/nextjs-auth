@@ -20,9 +20,7 @@ import { disconnectProvider } from './actions';
 
 interface ConnectAccountDialogProps
   extends React.ComponentProps<typeof Dialog> {
-  providers: {
-    provider: string;
-  }[];
+  providers: string[];
 }
 
 export function ConnectAccountDialog({
@@ -30,8 +28,6 @@ export function ConnectAccountDialog({
   children,
   ...props
 }: ConnectAccountDialogProps) {
-  const connectedProviders = providers.map(({ provider }) => provider);
-
   return (
     <Dialog {...props}>
       <DialogTrigger asChild>{children}</DialogTrigger>
@@ -44,17 +40,11 @@ export function ConnectAccountDialog({
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">
-          <OAuthProvider
-            provider="google"
-            connectedProviders={connectedProviders}
-          >
+          <OAuthProvider provider="google" providers={providers}>
             <Google className="size-4" />
             Google
           </OAuthProvider>
-          <OAuthProvider
-            provider="github"
-            connectedProviders={connectedProviders}
-          >
+          <OAuthProvider provider="github" providers={providers}>
             <GitHub className="size-4 text-foreground" />
             GitHub
           </OAuthProvider>
@@ -66,16 +56,12 @@ export function ConnectAccountDialog({
 
 interface OAuthProviderProps extends React.ComponentProps<'label'> {
   provider: Provider;
-  connectedProviders: string[];
+  providers: string[];
 }
 
-function OAuthProvider({
-  provider,
-  connectedProviders,
-  children,
-}: OAuthProviderProps) {
+function OAuthProvider({ provider, providers, children }: OAuthProviderProps) {
   const [isPending, startTransition] = React.useTransition();
-  const isConnected = connectedProviders.includes(provider);
+  const isConnected = providers.includes(provider);
 
   function handleClick() {
     startTransition(async () => {
