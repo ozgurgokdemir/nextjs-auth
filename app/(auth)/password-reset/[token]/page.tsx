@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation';
-import { tokenSchema } from '@/lib/auth/definitions';
-import { ResetPasswordForm } from './form';
 import { prisma } from '@/lib/db/prisma';
+import { tokenSchema } from '@/lib/auth/definitions';
+import { isExpired } from '@/lib/security/time';
+import { ResetPasswordForm } from './form';
 
 type ResetPasswordPageProps = {
   params: Promise<{
@@ -32,7 +32,7 @@ export default async function ResetPasswordPage({
     return <p>The token is invalid</p>;
   }
 
-  if (passwordReset.expiresAt < new Date()) {
+  if (isExpired(passwordReset.expiresAt)) {
     await prisma.passwordReset.delete({
       where: {
         id: passwordReset.id,

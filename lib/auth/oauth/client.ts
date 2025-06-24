@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { generateToken } from '@/lib/security/token';
+import { getExpiresAt } from '@/lib/security/time';
 
 type Endpoints = {
   auth: string;
@@ -111,7 +112,7 @@ export class OAuthClient {
     const cookieStore = await cookies();
     cookieStore.set(STATE_COOKIE_KEY, state, {
       path: '/',
-      expires: new Date(Date.now() + COOKIE_EXPIRATION_SECONDS * 1000),
+      expires: getExpiresAt(COOKIE_EXPIRATION_SECONDS),
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       sameSite: 'lax',
@@ -130,7 +131,7 @@ export class OAuthClient {
     const cookieStore = await cookies();
     cookieStore.set(CODE_VERIFIER_COOKIE_KEY, codeVerifier, {
       path: '/',
-      expires: new Date(Date.now() + COOKIE_EXPIRATION_SECONDS * 1000),
+      expires: getExpiresAt(COOKIE_EXPIRATION_SECONDS),
       secure: process.env.NODE_ENV === 'production',
       httpOnly: true,
       sameSite: 'lax',

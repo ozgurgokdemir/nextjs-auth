@@ -4,6 +4,7 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
 import { generateOTP } from '@/lib/security/token';
+import { getExpiresAt } from '@/lib/security/time';
 
 const VERIFICATION_CODE_EXPIRATION_SECONDS = 60 * 60 * 24;
 const VERIFICATION_EMAIL_COOKIE_KEY = 'verification_email';
@@ -23,9 +24,7 @@ export async function upsertPendingUser({
   salt,
 }: PendingUser) {
   const code = generateOTP();
-  const expiresAt = new Date(
-    Date.now() + VERIFICATION_CODE_EXPIRATION_SECONDS * 1000
-  );
+  const expiresAt = getExpiresAt(VERIFICATION_CODE_EXPIRATION_SECONDS);
 
   return await prisma.pendingUser.upsert({
     where: {
@@ -56,9 +55,7 @@ export async function updateVerificationCode(email: string) {
     },
     data: {
       code: generateOTP(),
-      expiresAt: new Date(
-        Date.now() + VERIFICATION_CODE_EXPIRATION_SECONDS * 1000
-      ),
+      expiresAt: getExpiresAt(VERIFICATION_CODE_EXPIRATION_SECONDS),
     },
     select: {
       email: true,
@@ -86,9 +83,7 @@ export async function setVerificationEmailCookie(email: string) {
   const cookieStore = await cookies();
   cookieStore.set(VERIFICATION_EMAIL_COOKIE_KEY, email, {
     path: '/',
-    expires: new Date(
-      Date.now() + VERIFICATION_EMAIL_EXPIRATION_SECONDS * 1000
-    ),
+    expires: getExpiresAt(VERIFICATION_EMAIL_EXPIRATION_SECONDS),
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',

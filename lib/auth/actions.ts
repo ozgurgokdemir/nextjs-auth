@@ -2,6 +2,7 @@
 
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
+import { getUser } from '@/lib/db/queries';
 import { createSalt, hashPassword, verifyPassword } from '@/lib/auth/password';
 import {
   createSession,
@@ -43,7 +44,7 @@ import {
   passwordResetSchema,
   codeSchema,
 } from '@/lib/auth/definitions';
-import { getUser } from '@/lib/db/queries';
+import { getExpiresAt, isExpired } from '@/lib/security/time';
 
 export async function signIn(credentials: SignIn) {
   const { success, data } = signInSchema.safeParse(credentials);
@@ -168,7 +169,7 @@ export async function verifyEmail(args: EmailVerification) {
       error: 'The entered code is incorrect',
     };
   }
-  if (pendingUser.expiresAt < new Date()) {
+  if (isExpired(pendingUser.expiresAt)) {
     await prisma.pendingUser.delete({
       where: {
         id: pendingUser.id,
@@ -254,7 +255,7 @@ export async function resetPassword(args: PasswordReset) {
     };
   }
 
-  if (passwordReset.expiresAt < new Date()) {
+  if (isExpired(passwordReset.expiresAt)) {
     await prisma.passwordReset.delete({
       where: {
         id: passwordReset.id,
@@ -361,7 +362,7 @@ export async function verifyTwoFactor(code: string) {
 
   await deleteTwoFactorCookie();
 
-  if (twoFactor.expiresAt < new Date()) {
+  if (isExpired(twoFactor.expiresAt)) {
     return {
       error: 'Two-factor authentication code is expired',
     };
@@ -381,9 +382,7 @@ export async function verifyTwoFactor(code: string) {
   const sessionData = {
     ...user,
     isTwoFactorVerified: true,
-    twoFactorExpiresAt: new Date(
-      Date.now() + TWO_FACTOR_EXPIRATION_SECONDS * 1000
-    ),
+    twoFactorExpiresAt: getExpiresAt(TWO_FACTOR_EXPIRATION_SECONDS),
   };
 
   const session = await getSession();

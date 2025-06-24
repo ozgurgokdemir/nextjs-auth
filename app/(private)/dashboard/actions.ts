@@ -2,15 +2,16 @@
 
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
+import { getUser } from '@/lib/db/queries';
 import { deleteSession, getSession, updateSession } from '@/lib/auth/session';
 import { createSalt, hashPassword } from '@/lib/auth/password';
-import { codeSchema, nameSchema, passwordSchema } from '@/lib/auth/definitions';
 import {
   sendDeleteAccountEmail,
   upsertDeleteAccount,
 } from '@/lib/auth/delete-account';
-import { getUser } from '@/lib/db/queries';
 import { deleteTwoFactorCookie } from '@/lib/auth/two-factor';
+import { codeSchema, nameSchema, passwordSchema } from '@/lib/auth/definitions';
+import { isExpired } from '@/lib/security/time';
 
 export async function updateUserName(name: string) {
   const { success, data, error } = nameSchema.safeParse(name);
@@ -75,7 +76,7 @@ export async function updateUserPassword(password: string) {
         requires2FA: true,
       };
     }
-    if (session.twoFactorExpiresAt && session.twoFactorExpiresAt < new Date()) {
+    if (session.twoFactorExpiresAt && isExpired(session.twoFactorExpiresAt)) {
       return {
         status: 'error',
         message: 'Your two-factor authentication is expired',
@@ -122,16 +123,6 @@ export async function enableTwoFactor() {
       message: 'Two-factor authentication is already enabled',
     };
   }
-  // if (
-  //   !session.twoFactorExpiresAt ||
-  //   (session.twoFactorExpiresAt && session.twoFactorExpiresAt < new Date())
-  // ) {
-  //   return {
-  //     status: 'error',
-  //     message: 'Your two-factor authentication is expired',
-  //     requires2FA: true,
-  //   };
-  // }
 
   const updatedUser = await prisma.user.update({
     where: {
@@ -168,7 +159,7 @@ export async function disableTwoFactor() {
   }
   if (
     !session.twoFactorExpiresAt ||
-    (session.twoFactorExpiresAt && session.twoFactorExpiresAt < new Date())
+    (session.twoFactorExpiresAt && isExpired(session.twoFactorExpiresAt))
   ) {
     return {
       status: 'error',
@@ -244,7 +235,7 @@ export async function deleteAccount(code: string) {
       error: 'The entered code is expired',
     };
   }
-  if (deleteAccount.expiresAt < new Date()) {
+  if (isExpired(deleteAccount.expiresAt)) {
     await prisma.deleteAccount.delete({
       where: {
         id: deleteAccount.id,

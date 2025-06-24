@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { redis } from '@/lib/db/redis';
 import { generateToken } from '@/lib/security/token';
+import { getExpiresAt } from '@/lib/security/time';
 
 const SESSION_COOKIE_KEY = 'session_id';
 const SESSION_REDIS_KEY = 'session';
@@ -30,7 +31,7 @@ export async function createSession(user: z.infer<typeof sessionSchema>) {
 
   cookieStore.set(SESSION_COOKIE_KEY, sessionId, {
     path: '/',
-    expires: new Date(Date.now() + SESSION_EXPIRATION_SECONDS * 1000),
+    expires: getExpiresAt(SESSION_EXPIRATION_SECONDS),
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
@@ -65,7 +66,7 @@ export async function updateSession(user: z.infer<typeof sessionSchema>) {
 
   cookieStore.set(SESSION_COOKIE_KEY, sessionId, {
     path: '/',
-    expires: new Date(Date.now() + SESSION_EXPIRATION_SECONDS * 1000),
+    expires: getExpiresAt(SESSION_EXPIRATION_SECONDS),
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',

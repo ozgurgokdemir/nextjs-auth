@@ -3,12 +3,13 @@ import 'server-only';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
 import { generateToken } from '@/lib/security/token';
+import { getExpiresAt } from '@/lib/security/time';
 
 const TOKEN_EXPIRATION_SECONDS = 60 * 60 * 24;
 
 export async function upsertPasswordReset(email: string) {
   const token = generateToken();
-  const expiresAt = new Date(Date.now() + TOKEN_EXPIRATION_SECONDS * 1000);
+  const expiresAt = getExpiresAt(TOKEN_EXPIRATION_SECONDS);
 
   const existingPasswordReset = await prisma.passwordReset.findFirst({
     where: {

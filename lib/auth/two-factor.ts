@@ -4,13 +4,14 @@ import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
 import { generateOTP } from '@/lib/security/token';
+import { getExpiresAt } from '@/lib/security/time';
 
 export const TWO_FACTOR_COOKIE_KEY = 'two_factor_id';
 export const TWO_FACTOR_EXPIRATION_SECONDS = 60 * 15;
 
 export async function upsertTwoFactor(userId: string) {
   const code = generateOTP();
-  const expiresAt = new Date(Date.now() + TWO_FACTOR_EXPIRATION_SECONDS * 1000);
+  const expiresAt = getExpiresAt(TWO_FACTOR_EXPIRATION_SECONDS);
 
   const twoFactor = await prisma.twoFactor.upsert({
     where: {
@@ -53,7 +54,7 @@ export async function createTwoFactorCookie(id: string) {
 
   cookieStore.set(TWO_FACTOR_COOKIE_KEY, id, {
     path: '/',
-    expires: new Date(Date.now() + TWO_FACTOR_EXPIRATION_SECONDS * 1000),
+    expires: getExpiresAt(TWO_FACTOR_EXPIRATION_SECONDS),
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
     sameSite: 'lax',
