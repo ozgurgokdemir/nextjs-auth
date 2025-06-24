@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
+import { generateToken } from '@/lib/security/token';
 
 type Endpoints = {
   auth: string;
@@ -106,7 +107,7 @@ export class OAuthClient {
   }
 
   private async createState() {
-    const state = crypto.randomBytes(64).toString('hex').normalize();
+    const state = generateToken();
     const cookieStore = await cookies();
     cookieStore.set(STATE_COOKIE_KEY, state, {
       path: '/',
@@ -125,7 +126,7 @@ export class OAuthClient {
   }
 
   private async createCodeVerifier() {
-    const codeVerifier = crypto.randomBytes(64).toString('hex').normalize();
+    const codeVerifier = generateToken();
     const cookieStore = await cookies();
     cookieStore.set(CODE_VERIFIER_COOKIE_KEY, codeVerifier, {
       path: '/',

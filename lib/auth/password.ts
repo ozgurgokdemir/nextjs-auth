@@ -1,4 +1,5 @@
 import crypto from 'crypto';
+import { generateToken, TOKEN_SIZE_SHORT } from '@/lib/security/token';
 
 type VerifyPasswordProps = {
   password: string;
@@ -27,5 +28,5 @@ export async function verifyPassword({
 }
 
 export function createSalt() {
-  return crypto.randomBytes(16).toString('hex').normalize();
+  return generateToken(TOKEN_SIZE_SHORT);
 }

@@ -1,13 +1,13 @@
 import 'server-only';
 
-import crypto from 'crypto';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
+import { generateToken } from '@/lib/security/token';
 
 const TOKEN_EXPIRATION_SECONDS = 60 * 60 * 24;
 
 export async function upsertPasswordReset(email: string) {
-  const token = crypto.randomBytes(32).toString('hex');
+  const token = generateToken();
   const expiresAt = new Date(Date.now() + TOKEN_EXPIRATION_SECONDS * 1000);
 
   const existingPasswordReset = await prisma.passwordReset.findFirst({

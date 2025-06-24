@@ -1,9 +1,9 @@
 import 'server-only';
 
-import crypto from 'crypto';
+import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
-import { cookies } from 'next/headers';
+import { generateOTP } from '@/lib/security/token';
 
 const VERIFICATION_CODE_EXPIRATION_SECONDS = 60 * 60 * 24;
 const VERIFICATION_EMAIL_COOKIE_KEY = 'verification_email';
@@ -22,7 +22,7 @@ export async function upsertPendingUser({
   password,
   salt,
 }: PendingUser) {
-  const code = crypto.randomInt(100000, 999999).toString();
+  const code = generateOTP();
   const expiresAt = new Date(
     Date.now() + VERIFICATION_CODE_EXPIRATION_SECONDS * 1000
   );
@@ -55,7 +55,7 @@ export async function updateVerificationCode(email: string) {
       email,
     },
     data: {
-      code: crypto.randomInt(100000, 999999).toString(),
+      code: generateOTP(),
       expiresAt: new Date(
         Date.now() + VERIFICATION_CODE_EXPIRATION_SECONDS * 1000
       ),

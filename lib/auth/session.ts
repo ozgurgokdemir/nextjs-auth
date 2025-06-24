@@ -1,9 +1,9 @@
 import 'server-only';
 
-import crypto from 'crypto';
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { redis } from '@/lib/db/redis';
+import { generateToken } from '@/lib/security/token';
 
 const SESSION_COOKIE_KEY = 'session_id';
 const SESSION_REDIS_KEY = 'session';
@@ -20,7 +20,7 @@ export async function createSession(user: z.infer<typeof sessionSchema>) {
   const { success, data } = sessionSchema.safeParse(user);
   if (!success) return;
 
-  const sessionId = crypto.randomBytes(512).toString('hex');
+  const sessionId = generateToken();
 
   await redis.set(`${SESSION_REDIS_KEY}:${sessionId}`, data, {
     ex: SESSION_EXPIRATION_SECONDS,

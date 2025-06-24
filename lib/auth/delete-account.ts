@@ -1,13 +1,13 @@
 import 'server-only';
 
-import crypto from 'crypto';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
+import { generateOTP } from '@/lib/security/token';
 
 const VERIFICATION_CODE_EXPIRATION_SECONDS = 60 * 60 * 24;
 
 export async function upsertDeleteAccount(userId: string) {
-  const code = crypto.randomInt(100000, 999999).toString();
+  const code = generateOTP();
   const expiresAt = new Date(
     Date.now() + VERIFICATION_CODE_EXPIRATION_SECONDS * 1000
   );

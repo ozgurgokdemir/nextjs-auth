@@ -1,15 +1,15 @@
 import 'server-only';
 
-import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
+import { generateOTP } from '@/lib/security/token';
 
 export const TWO_FACTOR_COOKIE_KEY = 'two_factor_id';
 export const TWO_FACTOR_EXPIRATION_SECONDS = 60 * 15;
 
 export async function upsertTwoFactor(userId: string) {
-  const code = crypto.randomInt(100000, 999999).toString();
+  const code = generateOTP();
   const expiresAt = new Date(Date.now() + TWO_FACTOR_EXPIRATION_SECONDS * 1000);
 
   const twoFactor = await prisma.twoFactor.upsert({
