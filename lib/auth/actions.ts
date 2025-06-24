@@ -3,7 +3,11 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { getUser } from '@/lib/db/queries';
-import { createSalt, hashPassword, verifyPassword } from '@/lib/auth/password';
+import {
+  generateSalt,
+  hashPassword,
+  verifyPassword,
+} from '@/lib/auth/password';
 import {
   createSession,
   deleteSession,
@@ -118,7 +122,7 @@ export async function signUp(credentials: SignUp) {
     };
   }
 
-  const salt = createSalt();
+  const salt = generateSalt();
   const hashedPassword = await hashPassword(data.password, salt);
 
   const pendingUser = await upsertPendingUser({
@@ -266,7 +270,7 @@ export async function resetPassword(args: PasswordReset) {
     };
   }
 
-  const salt = createSalt();
+  const salt = generateSalt();
   const hashedPassword = await hashPassword(data.password, salt);
 
   const [user] = await prisma.$transaction([

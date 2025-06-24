@@ -27,6 +27,6 @@ export async function verifyPassword({
   );
 }
 
-export function createSalt() {
+export function generateSalt() {
   return generateToken(TOKEN_SIZE_SHORT);
 }

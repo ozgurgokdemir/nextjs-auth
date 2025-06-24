@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { prisma } from '@/lib/db/prisma';
 import { getUser } from '@/lib/db/queries';
 import { deleteSession, getSession, updateSession } from '@/lib/auth/session';
-import { createSalt, hashPassword } from '@/lib/auth/password';
+import { generateSalt, hashPassword } from '@/lib/auth/password';
 import {
   sendDeleteAccountEmail,
   upsertDeleteAccount,
@@ -85,7 +85,7 @@ export async function updateUserPassword(password: string) {
     }
   }
 
-  const salt = createSalt();
+  const salt = generateSalt();
   const hashedPassword = await hashPassword(data, salt);
 
   await prisma.user.update({
