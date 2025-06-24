@@ -14,8 +14,8 @@ type User = {
   avatar?: string;
 };
 
-const STATE_COOKIE_KEY = 'oauth-state';
-const CODE_VERIFIER_COOKIE_KEY = 'oauth-code-verifier';
+const STATE_COOKIE_KEY = 'oauth_state';
+const CODE_VERIFIER_COOKIE_KEY = 'oauth_code_verifier';
 const COOKIE_EXPIRATION_SECONDS = 60 * 10;
 
 const tokenSchema = z

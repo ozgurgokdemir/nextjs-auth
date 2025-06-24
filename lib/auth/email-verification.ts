@@ -6,7 +6,7 @@ import { resend } from '@/lib/resend';
 import { cookies } from 'next/headers';
 
 const VERIFICATION_CODE_EXPIRATION_SECONDS = 60 * 60 * 24;
-const VERIFICATION_EMAIL_COOKIE_KEY = 'verification-email';
+const VERIFICATION_EMAIL_COOKIE_KEY = 'verification_email';
 const VERIFICATION_EMAIL_EXPIRATION_SECONDS = 60 * 15;
 
 type PendingUser = {
