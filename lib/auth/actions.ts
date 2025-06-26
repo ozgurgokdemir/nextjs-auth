@@ -46,9 +46,9 @@ import {
   emailSchema,
   PasswordReset,
   passwordResetSchema,
-  codeSchema,
+  otpSchema,
 } from '@/lib/auth/definitions';
-import { getExpiresAt, isExpired } from '@/lib/security/time';
+import { getExpiresAt, isExpired } from '@/lib/date';
 
 export async function signIn(credentials: SignIn) {
   const { success, data } = signInSchema.safeParse(credentials);
@@ -336,7 +336,7 @@ export async function sendPasswordReset(email: string) {
 }
 
 export async function verifyTwoFactor(code: string) {
-  const { success, data } = codeSchema.safeParse(code);
+  const { success, data } = otpSchema.safeParse(code);
   if (!success) {
     return {
       error: 'Two-factor authentication code is invalid',

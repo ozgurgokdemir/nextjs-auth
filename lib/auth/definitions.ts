@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
 
 export const emailSchema = z
   .string()
@@ -18,13 +19,16 @@ export const nameSchema = z
   .min(2, { message: 'Name must be at least 2 characters long' })
   .max(50, { message: 'Name must be at most 50 characters long' });
 
-export const codeSchema = z
-  .string()
-  .length(6, { message: 'Code must be 6 characters long' });
-
 export const tokenSchema = z
   .string()
-  .length(64, { message: 'Token must be 64 characters long' });
+  .max(128, { message: 'Token must be at most 128 characters long' });
+
+export const otpSchema = z
+  .string()
+  .length(6, { message: 'Code must be 6 characters long' })
+  .regex(new RegExp(REGEXP_ONLY_DIGITS), {
+    message: 'Code must contain only digits',
+  });
 
 export const signInSchema = z.object({
   email: emailSchema,
@@ -39,7 +43,7 @@ export const signUpSchema = z.object({
 
 export const emailVerificationSchema = z.object({
   email: emailSchema,
-  code: codeSchema,
+  code: otpSchema,
 });
 
 export const passwordResetSchema = z.object({

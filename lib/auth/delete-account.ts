@@ -2,8 +2,8 @@ import 'server-only';
 
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
-import { generateOTP } from '@/lib/security/token';
-import { getExpiresAt } from '@/lib/security/time';
+import { generateOTP } from '@/lib/auth/token';
+import { getExpiresAt } from '@/lib/date';
 
 const VERIFICATION_CODE_EXPIRATION_SECONDS = 60 * 60 * 24;
 

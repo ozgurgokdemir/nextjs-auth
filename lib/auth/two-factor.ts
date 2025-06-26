@@ -3,8 +3,8 @@ import 'server-only';
 import { cookies } from 'next/headers';
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
-import { generateOTP } from '@/lib/security/token';
-import { getExpiresAt } from '@/lib/security/time';
+import { generateOTP } from '@/lib/auth/token';
+import { getExpiresAt } from '@/lib/date';
 
 export const TWO_FACTOR_COOKIE_KEY = 'two_factor_id';
 export const TWO_FACTOR_EXPIRATION_SECONDS = 60 * 15;

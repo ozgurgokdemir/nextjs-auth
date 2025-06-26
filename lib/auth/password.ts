@@ -1,5 +1,5 @@
 import crypto from 'crypto';
-import { generateToken, TOKEN_SIZE_SHORT } from '@/lib/security/token';
+import { generateToken, TOKEN_SIZE_SHORT } from '@/lib/auth/token';
 
 type VerifyPasswordProps = {
   password: string;

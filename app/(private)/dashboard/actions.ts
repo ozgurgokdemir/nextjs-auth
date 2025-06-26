@@ -10,8 +10,8 @@ import {
   upsertDeleteAccount,
 } from '@/lib/auth/delete-account';
 import { deleteTwoFactorCookie } from '@/lib/auth/two-factor';
-import { codeSchema, nameSchema, passwordSchema } from '@/lib/auth/definitions';
-import { isExpired } from '@/lib/security/time';
+import { otpSchema, nameSchema, passwordSchema } from '@/lib/auth/definitions';
+import { isExpired } from '@/lib/date';
 
 export async function updateUserName(name: string) {
   const { success, data, error } = nameSchema.safeParse(name);
@@ -211,7 +211,7 @@ export async function disconnectProvider(provider: string) {
 }
 
 export async function deleteAccount(code: string) {
-  const { success, data, error } = codeSchema.safeParse(code);
+  const { success, data, error } = otpSchema.safeParse(code);
   if (!success) {
     return {
       error: error.flatten().formErrors[0],

@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
-import { generateToken } from '@/lib/security/token';
-import { getExpiresAt } from '@/lib/security/time';
+import { generateToken } from '@/lib/auth/token';
+import { getExpiresAt } from '@/lib/date';
 
 type Endpoints = {
   auth: string;

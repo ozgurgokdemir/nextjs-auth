@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/db/prisma';
 import { tokenSchema } from '@/lib/auth/definitions';
-import { isExpired } from '@/lib/security/time';
+import { isExpired } from '@/lib/date';
 import { ResetPasswordForm } from './form';
 
 type ResetPasswordPageProps = {

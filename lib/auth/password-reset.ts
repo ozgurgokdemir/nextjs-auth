@@ -2,8 +2,8 @@ import 'server-only';
 
 import { prisma } from '@/lib/db/prisma';
 import { resend } from '@/lib/resend';
-import { generateToken } from '@/lib/security/token';
-import { getExpiresAt } from '@/lib/security/time';
+import { generateToken } from '@/lib/auth/token';
+import { getExpiresAt } from '@/lib/date';
 
 const TOKEN_EXPIRATION_SECONDS = 60 * 60 * 24;
 

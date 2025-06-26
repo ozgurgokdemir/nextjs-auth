@@ -32,7 +32,7 @@ import {
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
-import { codeSchema } from '@/lib/auth/definitions';
+import { otpSchema } from '@/lib/auth/definitions';
 import { deleteAccount, sendDeleteAccount } from './actions';
 
 const RESEND_COUNTDOWN_SECONDS = 30;
@@ -40,7 +40,7 @@ const RESEND_COUNTDOWN_SECONDS = 30;
 let initialOpen = true;
 
 const deleteAccountSchema = z.object({
-  code: codeSchema,
+  code: otpSchema,
 });
 type DeleteAccount = z.infer<typeof deleteAccountSchema>;
 
