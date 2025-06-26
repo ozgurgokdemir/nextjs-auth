@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { redis } from '@/lib/db/redis';
 import { generateToken } from '@/lib/security/token';
 import { getExpiresAt } from '@/lib/security/time';
+import { cache } from 'react';
 
 const SESSION_COOKIE_KEY = 'session_id';
 const SESSION_REDIS_KEY = 'session';
@@ -38,7 +39,7 @@ export async function createSession(user: z.infer<typeof sessionSchema>) {
   });
 }
 
-export async function getSession() {
+export const getSession = cache(async () => {
   const cookieStore = await cookies();
 
   const sessionId = cookieStore.get(SESSION_COOKIE_KEY)?.value;
@@ -49,7 +50,7 @@ export async function getSession() {
   const { data } = sessionSchema.safeParse(session);
 
   return data;
-}
+});
 
 export async function updateSession(user: z.infer<typeof sessionSchema>) {
   const { success, data } = sessionSchema.safeParse(user);
