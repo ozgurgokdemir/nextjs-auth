@@ -46,7 +46,8 @@ import {
   emailSchema,
   PasswordReset,
   passwordResetSchema,
-  otpSchema,
+  TwoFactor,
+  twoFactorSchema,
 } from '@/lib/auth/definitions';
 import { getExpiresAt, isExpired } from '@/lib/date';
 
@@ -335,8 +336,8 @@ export async function sendPasswordReset(email: string) {
   }
 }
 
-export async function verifyTwoFactor(code: string) {
-  const { success, data } = otpSchema.safeParse(code);
+export async function verifyTwoFactor(values: TwoFactor) {
+  const { success, data } = twoFactorSchema.safeParse(values);
   if (!success) {
     return {
       error: 'Two-factor authentication code is invalid',
@@ -356,7 +357,7 @@ export async function verifyTwoFactor(code: string) {
       error: 'Two-factor authentication code is expired',
     };
   }
-  if (twoFactor.code !== data) {
+  if (twoFactor.code !== data.code) {
     return {
       error: 'Two-factor authentication code is incorrect',
     };
@@ -411,8 +412,7 @@ export async function sendTwoFactor() {
     const user = await getUser();
     if (!user) {
       return {
-        status: 'error',
-        message: 'User is not authenticated',
+        error: 'User is not authenticated',
       };
     }
 
@@ -422,16 +422,12 @@ export async function sendTwoFactor() {
 
     await sendTwoFactorEmail(user.email, code);
 
-    return {
-      status: 'success',
-      message: 'Password reset email sent',
-    };
+    return {};
   } catch (error) {
     console.error(error);
 
     return {
-      status: 'error',
-      message: 'Something went wrong!',
+      error: 'Something went wrong!',
     };
   }
 }

@@ -1,5 +1,4 @@
 import { z } from 'zod';
-import { REGEXP_ONLY_DIGITS } from 'input-otp';
 
 export const emailSchema = z
   .string()
@@ -49,7 +48,12 @@ export const passwordResetSchema = z.object({
   token: tokenSchema,
 });
 
+export const twoFactorSchema = z.object({
+  code: otpSchema,
+});
+
 export type SignIn = z.infer<typeof signInSchema>;
 export type SignUp = z.infer<typeof signUpSchema>;
 export type EmailVerification = z.infer<typeof emailVerificationSchema>;
 export type PasswordReset = z.infer<typeof passwordResetSchema>;
+export type TwoFactor = z.infer<typeof twoFactorSchema>;
