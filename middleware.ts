@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSession, updateSession } from '@/lib/auth/session';
+import { ratelimit } from '@/lib/ratelimit';
+import { getClientIP } from '@/lib/ip';
 
 const ROUTES = {
   protected: ['/dashboard'],
@@ -18,6 +20,13 @@ const REDIRECTS = {
 };
 
 export default async function middleware(request: NextRequest) {
+  const ip = getClientIP(request.headers);
+
+  const { success } = await ratelimit.global.limit(ip);
+  if (!success) {
+    return new NextResponse('Too many requests', { status: 429 });
+  }
+
   const { pathname } = request.nextUrl;
 
   const isProtectedRoute = ROUTES.protected.some((route) =>
@@ -28,21 +37,21 @@ export default async function middleware(request: NextRequest) {
   );
 
   const session = await getSession();
-
-  if (!session && isProtectedRoute) {
-    return NextResponse.redirect(
-      new URL(REDIRECTS.unauthenticated, request.nextUrl)
-    );
-  }
-
-  if (session) {
-    await updateSession(session);
-  }
-
-  if (session && isAuthenticationRoute) {
-    return NextResponse.redirect(
-      new URL(REDIRECTS.authenticated, request.nextUrl)
-    );
+  if (!session) {
+    if (isProtectedRoute) {
+      return NextResponse.redirect(
+        new URL(REDIRECTS.unauthenticated, request.nextUrl)
+      );
+    }
+  } else {
+    if (request.method === 'GET') {
+      await updateSession(session);
+    }
+    if (isAuthenticationRoute) {
+      return NextResponse.redirect(
+        new URL(REDIRECTS.authenticated, request.nextUrl)
+      );
+    }
   }
 
   return NextResponse.next();
