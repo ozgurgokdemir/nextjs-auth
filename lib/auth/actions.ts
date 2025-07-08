@@ -1,6 +1,8 @@
 'use server';
 
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { ratelimit } from '@/lib/ratelimit';
 import { prisma } from '@/lib/db/prisma';
 import { getUser } from '@/lib/db/queries';
 import {
@@ -50,18 +52,26 @@ import {
   twoFactorSchema,
 } from '@/lib/auth/definitions';
 import { getExpiresAt, isExpired } from '@/lib/date';
+import { getClientIP } from '@/lib/ip';
 
-export async function signIn(credentials: SignIn) {
-  const { success, data } = signInSchema.safeParse(credentials);
-  if (!success) {
+export async function signIn(data: SignIn) {
+  const signIn = signInSchema.safeParse(data);
+  if (!signIn.success) {
     return {
       error: 'Invalid credentials',
     };
   }
 
+  const signInRateLimit = await ratelimit.signIn.limit(signIn.data.email);
+  if (!signInRateLimit.success) {
+    return {
+      error: 'Too many requests, please try again later',
+    };
+  }
+
   const user = await prisma.user.findUnique({
     where: {
-      email: data.email,
+      email: signIn.data.email,
     },
     select: {
       id: true,
@@ -79,7 +89,7 @@ export async function signIn(credentials: SignIn) {
   }
 
   const isPasswordValid = await verifyPassword({
-    password: data.password,
+    password: signIn.data.password,
     hashedPassword: user.password,
     salt: user.salt,
   });
@@ -104,17 +114,24 @@ export async function signIn(credentials: SignIn) {
   redirect('/dashboard');
 }
 
-export async function signUp(credentials: SignUp) {
-  const { success, data } = signUpSchema.safeParse(credentials);
-  if (!success) {
+export async function signUp(data: SignUp) {
+  const signUp = signUpSchema.safeParse(data);
+  if (!signUp.success) {
     return {
       error: 'Invalid credentials',
     };
   }
 
+  const signUpRateLimit = await ratelimit.signUp.limit(signUp.data.email);
+  if (!signUpRateLimit.success) {
+    return {
+      error: 'Too many requests, please try again later',
+    };
+  }
+
   const existingUser = await prisma.user.findUnique({
     where: {
-      email: data.email,
+      email: signUp.data.email,
     },
   });
   if (existingUser) {
@@ -124,11 +141,11 @@ export async function signUp(credentials: SignUp) {
   }
 
   const salt = generateSalt();
-  const hashedPassword = await hashPassword(data.password, salt);
+  const hashedPassword = await hashPassword(signUp.data.password, salt);
 
   const pendingUser = await upsertPendingUser({
-    name: data.name,
-    email: data.email,
+    name: signUp.data.name,
+    email: signUp.data.email,
     password: hashedPassword,
     salt,
   });
@@ -153,23 +170,32 @@ export async function oAuthSignIn(provider: Provider) {
   redirect(url.toString());
 }
 
-export async function verifyEmail(args: EmailVerification) {
-  const { success, data } = emailVerificationSchema.safeParse(args);
-  if (!success) {
+export async function verifyEmail(data: EmailVerification) {
+  const emailVerification = emailVerificationSchema.safeParse(data);
+  if (!emailVerification.success) {
     return {
       error: 'Invalid credentials',
     };
   }
 
+  const emailVerificationRateLimit = await ratelimit.emailVerification.limit(
+    emailVerification.data.email
+  );
+  if (!emailVerificationRateLimit.success) {
+    return {
+      error: 'Too many requests, please try again later',
+    };
+  }
+
   const pendingUser = await prisma.pendingUser.findUnique({
     where: {
-      email: data.email,
+      email: emailVerification.data.email,
     },
   });
   if (!pendingUser) {
     redirect('/signup');
   }
-  if (pendingUser.code !== data.code) {
+  if (pendingUser.code !== emailVerification.data.code) {
     return {
       error: 'The entered code is incorrect',
     };
@@ -187,7 +213,7 @@ export async function verifyEmail(args: EmailVerification) {
 
   const existingUser = await prisma.user.findUnique({
     where: {
-      email: data.email,
+      email: emailVerification.data.email,
     },
   });
   if (existingUser) {
@@ -218,17 +244,28 @@ export async function verifyEmail(args: EmailVerification) {
   redirect('/dashboard');
 }
 
-export async function resendEmailVerification(email: string) {
+export async function resendEmailVerification(data: string) {
   try {
-    const validatedEmail = emailSchema.parse(email);
-    const { code } = await updateVerificationCode(validatedEmail);
-    await sendEmailVerification(validatedEmail, code);
+    const email = emailSchema.parse(data);
+
+    const sendEmailRateLimit = await ratelimit.sendEmail.limit(email);
+    if (!sendEmailRateLimit.success) {
+      return {
+        status: 'error',
+        message: 'Too many requests, please try again later',
+      };
+    }
+
+    const { code } = await updateVerificationCode(email);
+    await sendEmailVerification(email, code);
+
     return {
       status: 'success',
       message: 'Verification code resent',
     };
   } catch (error) {
     console.error(error);
+
     return {
       status: 'error',
       message: 'Something went wrong!',
@@ -236,17 +273,27 @@ export async function resendEmailVerification(email: string) {
   }
 }
 
-export async function resetPassword(args: PasswordReset) {
-  const { success, data } = passwordResetSchema.safeParse(args);
-  if (!success) {
+export async function resetPassword(data: PasswordReset) {
+  const input = passwordResetSchema.safeParse(data);
+  if (!input.success) {
     return {
       error: 'Invalid token or password',
     };
   }
 
+  const headersList = await headers();
+  const clientIP = getClientIP(headersList);
+
+  const passwordResetRateLimit = await ratelimit.passwordReset.limit(clientIP);
+  if (!passwordResetRateLimit.success) {
+    return {
+      error: 'Too many requests, please try again later',
+    };
+  }
+
   const passwordReset = await prisma.passwordReset.findFirst({
     where: {
-      token: data.token,
+      token: input.data.token,
     },
     select: {
       id: true,
@@ -272,7 +319,7 @@ export async function resetPassword(args: PasswordReset) {
   }
 
   const salt = generateSalt();
-  const hashedPassword = await hashPassword(data.password, salt);
+  const hashedPassword = await hashPassword(input.data.password, salt);
 
   const [user] = await prisma.$transaction([
     prisma.user.update({
@@ -300,13 +347,21 @@ export async function resetPassword(args: PasswordReset) {
   redirect('/dashboard');
 }
 
-export async function sendPasswordReset(email: string) {
+export async function sendPasswordReset(data: string) {
   try {
-    const validatedEmail = emailSchema.parse(email);
+    const email = emailSchema.parse(data);
+
+    const sendEmailRateLimit = await ratelimit.sendEmail.limit(email);
+    if (!sendEmailRateLimit.success) {
+      return {
+        status: 'error',
+        message: 'Too many requests, please try again later',
+      };
+    }
 
     const existingUser = await prisma.user.findUnique({
       where: {
-        email: validatedEmail,
+        email,
       },
       select: {
         email: true,
@@ -319,8 +374,8 @@ export async function sendPasswordReset(email: string) {
       };
     }
 
-    const { token } = await upsertPasswordReset(validatedEmail);
-    await sendPasswordResetEmail(validatedEmail, token);
+    const { token } = await upsertPasswordReset(email);
+    await sendPasswordResetEmail(email, token);
 
     return {
       status: 'success',
@@ -336,11 +391,21 @@ export async function sendPasswordReset(email: string) {
   }
 }
 
-export async function verifyTwoFactor(values: TwoFactor) {
-  const { success, data } = twoFactorSchema.safeParse(values);
-  if (!success) {
+export async function verifyTwoFactor(data: TwoFactor) {
+  const input = twoFactorSchema.safeParse(data);
+  if (!input.success) {
     return {
       error: 'Two-factor authentication code is invalid',
+    };
+  }
+
+  const headersList = await headers();
+  const clientIP = getClientIP(headersList);
+
+  const twoFactorRateLimit = await ratelimit.twoFactor.limit(clientIP);
+  if (!twoFactorRateLimit.success) {
+    return {
+      error: 'Too many requests, please try again later',
     };
   }
 
@@ -357,7 +422,7 @@ export async function verifyTwoFactor(values: TwoFactor) {
       error: 'Two-factor authentication code is expired',
     };
   }
-  if (twoFactor.code !== data.code) {
+  if (twoFactor.code !== input.data.code) {
     return {
       error: 'Two-factor authentication code is incorrect',
     };
@@ -391,17 +456,17 @@ export async function verifyTwoFactor(values: TwoFactor) {
   };
 
   const session = await getSession();
-  if (session) {
+  if (!session) {
+    await createSession(sessionData);
+
+    redirect('/dashboard');
+  } else {
     if (user.id !== session.id) {
       return {
         error: 'User does not match the current session',
       };
     }
     await updateSession(sessionData);
-  } else {
-    await createSession(sessionData);
-
-    redirect('/dashboard');
   }
 
   return {};
@@ -413,6 +478,14 @@ export async function sendTwoFactor() {
     if (!user) {
       return {
         error: 'User is not authenticated',
+      };
+    }
+
+    const sendEmailRateLimit = await ratelimit.sendEmail.limit(user.email);
+    if (!sendEmailRateLimit.success) {
+      return {
+        status: 'error',
+        message: 'Too many requests, please try again later',
       };
     }
 
