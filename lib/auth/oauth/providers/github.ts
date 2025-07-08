@@ -21,9 +21,15 @@ const emailSchema = z
       verified: z.boolean(),
     })
   )
-  .transform(
-    (data) => data.find(({ primary, verified }) => primary && verified)?.email
-  );
+  .transform((data) => {
+    const primaryEmail = data.find(
+      ({ primary, verified }) => primary && verified
+    )?.email;
+    if (!primaryEmail) {
+      throw new Error('No primary and verified email found');
+    }
+    return primaryEmail;
+  });
 
 export function createGitHubOAuthClient() {
   return new OAuthClient({
@@ -36,27 +42,32 @@ export function createGitHubOAuthClient() {
       token: 'https://github.com/login/oauth/access_token',
     },
     getUser: async ({ tokenType, accessToken }) => {
-      const user = await fetch('https://api.github.com/user', {
+      const userPromise = fetch('https://api.github.com/user', {
         headers: {
           Authorization: `${tokenType} ${accessToken}`,
         },
-      }).then(async (response) => {
-        const data = await response.json();
-        const { data: user } = userSchema.safeParse(data);
-        return user;
       });
-      if (!user) return;
-      const email = await fetch('https://api.github.com/user/emails', {
+      const emailsPromise = fetch('https://api.github.com/user/emails', {
         headers: {
           Authorization: `${tokenType} ${accessToken}`,
         },
-      }).then(async (response) => {
-        const data = await response.json();
-        const { data: email } = emailSchema.safeParse(data);
-        return email;
       });
-      if (!email) return;
-      return { ...user, email };
+
+      const [userResponse, emailsResponse] = await Promise.all([
+        userPromise,
+        emailsPromise,
+      ]);
+
+      const userData = await userResponse.json();
+      const emailsData = await emailsResponse.json();
+
+      const user = userSchema.safeParse(userData);
+      if (!user.success) return;
+
+      const email = emailSchema.safeParse(emailsData);
+      if (!email.success) return;
+
+      return { ...user.data, email: email.data };
     },
   });
 }
