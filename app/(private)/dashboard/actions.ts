@@ -1,6 +1,7 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { ratelimit } from '@/lib/ratelimit';
 import { prisma } from '@/lib/db/prisma';
 import { getUser } from '@/lib/db/queries';
 import { deleteSession, getSession, updateSession } from '@/lib/auth/session';
@@ -275,6 +276,13 @@ export async function sendDeleteAccount() {
     if (!user) {
       return {
         error: 'User is not authenticated',
+      };
+    }
+
+    const sendEmailRateLimit = await ratelimit.sendEmail.limit(user.email);
+    if (!sendEmailRateLimit.success) {
+      return {
+        error: 'Too many requests, please try again later',
       };
     }
 
