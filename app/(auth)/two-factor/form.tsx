@@ -31,13 +31,13 @@ import {
 import { Button } from '@/components/ui/button';
 import { sendTwoFactor, verifyTwoFactor } from '@/lib/auth/actions';
 import { twoFactorSchema, TwoFactor } from '@/lib/auth/definitions';
-
-const RESEND_COUNTDOWN_SECONDS = 30;
+import { useCountdown } from '@/lib/hooks/countdown';
 
 export function TwoFactorForm(props: React.ComponentProps<typeof Card>) {
   const [shouldFocus, setShouldFocus] = React.useState(false);
-  const [countdown, setCountdown] = React.useState(RESEND_COUNTDOWN_SECONDS);
   const [isPending, startTransition] = React.useTransition();
+  const { countdown, startCountdown, resetCountdown } =
+    useCountdown('two_factor');
 
   const form = useForm<TwoFactor>({
     resolver: zodResolver(twoFactorSchema),
@@ -53,20 +53,14 @@ export function TwoFactorForm(props: React.ComponentProps<typeof Card>) {
     }
   }, [shouldFocus, isPending]);
 
-  React.useEffect(() => {
-    if (countdown > 0) {
-      const timer = setInterval(() => {
-        setCountdown((current) => current - 1);
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [countdown]);
-
   async function handleResend() {
     if (countdown > 0) return;
-    setCountdown(RESEND_COUNTDOWN_SECONDS);
+    startCountdown();
     const { error } = await sendTwoFactor();
-    if (error) toast.error(error);
+    if (error) {
+      toast.error(error);
+      resetCountdown();
+    }
   }
 
   async function onSubmit(values: TwoFactor) {

@@ -274,24 +274,19 @@ export async function sendDeleteAccount() {
     const user = await getUser();
     if (!user) {
       return {
-        status: 'error',
-        message: 'User is not authenticated',
+        error: 'User is not authenticated',
       };
     }
 
     const { code } = await upsertDeleteAccount(user.id);
     await sendDeleteAccountEmail(user.email, code);
 
-    return {
-      status: 'success',
-      message: 'Delete account email sent',
-    };
+    return {};
   } catch (error) {
     console.error(error);
 
     return {
-      status: 'error',
-      message: 'Something went wrong!',
+      error: 'Something went wrong!',
     };
   }
 }

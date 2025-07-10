@@ -31,9 +31,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { sendTwoFactor, verifyTwoFactor } from '@/lib/auth/actions';
 import { twoFactorSchema, TwoFactor } from '@/lib/auth/definitions';
+import { useCountdown } from '@/lib/hooks/countdown';
 import { Callback } from './two-factor-provider';
-
-const RESEND_COUNTDOWN_SECONDS = 30;
 
 interface TwoFactorDialogProps extends React.ComponentProps<typeof Dialog> {
   open: boolean;
@@ -48,8 +47,9 @@ export function TwoFactorDialog({
   ...props
 }: TwoFactorDialogProps) {
   const [shouldFocus, setShouldFocus] = React.useState(false);
-  const [countdown, setCountdown] = React.useState(0);
   const [isPending, startTransition] = React.useTransition();
+  const { countdown, startCountdown, resetCountdown } =
+    useCountdown('two_factor');
 
   const form = useForm<TwoFactor>({
     resolver: zodResolver(twoFactorSchema),
@@ -74,20 +74,14 @@ export function TwoFactorDialog({
     }
   }, [shouldFocus, isPending]);
 
-  React.useEffect(() => {
-    if (countdown > 0) {
-      const timer = setInterval(() => {
-        setCountdown((current) => current - 1);
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [countdown]);
-
   async function handleResend() {
     if (countdown > 0) return;
-    setCountdown(RESEND_COUNTDOWN_SECONDS);
+    startCountdown();
     const { error } = await sendTwoFactor();
-    if (error) toast.error(error);
+    if (error) {
+      toast.error(error);
+      resetCountdown();
+    }
   }
 
   async function onSubmit(values: TwoFactor) {

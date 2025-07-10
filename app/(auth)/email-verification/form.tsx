@@ -3,6 +3,7 @@
 import * as React from 'react';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { toast } from 'sonner';
+
 import {
   Card,
   CardContent,
@@ -16,11 +17,10 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp';
-import { cn } from '@/lib/utils';
-import { resendEmailVerification, verifyEmail } from '@/lib/auth/actions';
 import { Button } from '@/components/ui/button';
-
-const RESEND_COUNTDOWN_SECONDS = 30;
+import { resendEmailVerification, verifyEmail } from '@/lib/auth/actions';
+import { useCountdown } from '@/lib/hooks/countdown';
+import { cn } from '@/lib/utils';
 
 interface EmailVerificationFormProps extends React.ComponentProps<'div'> {
   email: string;
@@ -31,17 +31,9 @@ export function EmailVerificationForm({
   className,
   ...props
 }: EmailVerificationFormProps) {
-  const [countdown, setCountdown] = React.useState(RESEND_COUNTDOWN_SECONDS);
   const [isPending, startTransition] = React.useTransition();
-
-  React.useEffect(() => {
-    if (countdown > 0) {
-      const timer = setInterval(() => {
-        setCountdown((current) => current - 1);
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [countdown]);
+  const { countdown, startCountdown, resetCountdown } =
+    useCountdown('email_verification');
 
   async function handleVerification(code: string) {
     startTransition(async () => {
@@ -52,10 +44,12 @@ export function EmailVerificationForm({
 
   async function handleResend() {
     if (countdown > 0) return;
-    setCountdown(RESEND_COUNTDOWN_SECONDS);
-    const { status, message } = await resendEmailVerification(email);
-    if (status === 'error') toast.error(message);
-    if (status === 'success') toast.success(message);
+    startCountdown();
+    const { error } = await resendEmailVerification(email);
+    if (error) {
+      toast.error(error);
+      resetCountdown();
+    }
   }
 
   return (

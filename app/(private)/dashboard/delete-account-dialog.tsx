@@ -33,9 +33,8 @@ import {
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { otpSchema } from '@/lib/auth/definitions';
+import { useCountdown } from '@/lib/hooks/countdown';
 import { deleteAccount, sendDeleteAccount } from './actions';
-
-const RESEND_COUNTDOWN_SECONDS = 30;
 
 let initialOpen = true;
 
@@ -54,8 +53,9 @@ export function DeleteAccountDialog({
   ...props
 }: DeleteAccountDialogProps) {
   const [open, setOpen] = React.useState(false);
-  const [countdown, setCountdown] = React.useState(0);
   const [isPending, startTransition] = React.useTransition();
+  const { countdown, startCountdown, resetCountdown } =
+    useCountdown('delete_account');
 
   const form = useForm<DeleteAccount>({
     resolver: zodResolver(deleteAccountSchema),
@@ -63,15 +63,6 @@ export function DeleteAccountDialog({
       code: '',
     },
   });
-
-  React.useEffect(() => {
-    if (countdown > 0) {
-      const timer = setInterval(() => {
-        setCountdown((current) => current - 1);
-      }, 1000);
-      return () => clearInterval(timer);
-    }
-  }, [countdown]);
 
   async function onSubmit({ code }: DeleteAccount) {
     startTransition(async () => {
@@ -82,10 +73,12 @@ export function DeleteAccountDialog({
 
   async function handleResend() {
     if (countdown > 0) return;
-    setCountdown(RESEND_COUNTDOWN_SECONDS);
-    const { status, message } = await sendDeleteAccount();
-    if (status === 'error') toast.error(message);
-    if (status === 'success') toast.success(message);
+    startCountdown();
+    const { error } = await sendDeleteAccount();
+    if (error) {
+      toast.error(error);
+      resetCountdown();
+    }
   }
 
   return (

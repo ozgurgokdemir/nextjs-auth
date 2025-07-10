@@ -251,24 +251,19 @@ export async function resendEmailVerification(data: string) {
     const sendEmailRateLimit = await ratelimit.sendEmail.limit(email);
     if (!sendEmailRateLimit.success) {
       return {
-        status: 'error',
-        message: 'Too many requests, please try again later',
+        error: 'Too many requests, please try again later',
       };
     }
 
     const { code } = await updateVerificationCode(email);
     await sendEmailVerification(email, code);
 
-    return {
-      status: 'success',
-      message: 'Verification code resent',
-    };
+    return {};
   } catch (error) {
     console.error(error);
 
     return {
-      status: 'error',
-      message: 'Something went wrong!',
+      error: 'Something went wrong!',
     };
   }
 }
@@ -484,8 +479,7 @@ export async function sendTwoFactor() {
     const sendEmailRateLimit = await ratelimit.sendEmail.limit(user.email);
     if (!sendEmailRateLimit.success) {
       return {
-        status: 'error',
-        message: 'Too many requests, please try again later',
+        error: 'Too many requests, please try again later',
       };
     }
 
