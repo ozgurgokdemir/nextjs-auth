@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { resendEmailVerification, verifyEmail } from '@/lib/auth/actions';
-import { useCountdown } from '@/lib/hooks/countdown';
+import { useCountdown } from '@/hooks/countdown';
 import { cn } from '@/lib/utils';
 
 interface EmailVerificationFormProps extends React.ComponentProps<'div'> {

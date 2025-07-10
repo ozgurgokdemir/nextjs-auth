@@ -33,7 +33,7 @@ import {
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { otpSchema } from '@/lib/auth/definitions';
-import { useCountdown } from '@/lib/hooks/countdown';
+import { useCountdown } from '@/hooks/countdown';
 import { deleteAccount, sendDeleteAccount } from './actions';
 
 let initialOpen = true;

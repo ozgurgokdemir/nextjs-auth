@@ -31,7 +31,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { sendTwoFactor, verifyTwoFactor } from '@/lib/auth/actions';
 import { twoFactorSchema, TwoFactor } from '@/lib/auth/definitions';
-import { useCountdown } from '@/lib/hooks/countdown';
+import { useCountdown } from '@/hooks/countdown';
 
 export function TwoFactorForm(props: React.ComponentProps<typeof Card>) {
   const [shouldFocus, setShouldFocus] = React.useState(false);
