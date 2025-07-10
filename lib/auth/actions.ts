@@ -469,10 +469,43 @@ export async function verifyTwoFactor(data: TwoFactor) {
 
 export async function sendTwoFactor() {
   try {
-    const user = await getUser();
+    const user = await (async () => {
+      const currentUser = await getUser();
+      if (currentUser) {
+        return {
+          id: currentUser.id,
+          email: currentUser.email,
+        };
+      }
+
+      const twoFactorId = await getTwoFactorIdFromCookie();
+      if (!twoFactorId) return null;
+
+      return await prisma.$transaction(async (tx) => {
+        const twoFactor = await tx.twoFactor.findUnique({
+          where: {
+            id: twoFactorId,
+          },
+          select: {
+            userId: true,
+          },
+        });
+        if (!twoFactor) return null;
+
+        return await tx.user.findUnique({
+          where: {
+            id: twoFactor.userId,
+          },
+          select: {
+            id: true,
+            email: true,
+          },
+        });
+      });
+    })();
     if (!user) {
       return {
-        error: 'User is not authenticated',
+        error: 'User does not exist',
       };
     }
 
