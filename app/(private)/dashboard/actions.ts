@@ -4,7 +4,12 @@ import { redirect } from 'next/navigation';
 import { ratelimit } from '@/lib/ratelimit';
 import { prisma } from '@/lib/db/prisma';
 import { getUser } from '@/lib/db/queries';
-import { deleteSession, getSession, updateSession } from '@/lib/auth/session';
+import {
+  getSession,
+  updateSession,
+  deleteSession,
+  invalidateSessions,
+} from '@/lib/auth/session';
 import { generateSalt, hashPassword } from '@/lib/auth/password';
 import {
   sendDeleteAccountEmail,
@@ -103,6 +108,8 @@ export async function updateUserPassword(password: string) {
     },
   });
 
+  await invalidateSessions(user.id, session.sessionId);
+
   return {
     status: 'success',
     message: 'Your password is updated',
@@ -188,8 +195,8 @@ export async function disableTwoFactor() {
 }
 
 export async function disconnectProvider(provider: string) {
-  const session = await getSession();
-  if (!session) {
+  const user = await getUser();
+  if (!user) {
     return {
       status: 'error',
       message: 'User is not authenticated',
@@ -198,12 +205,12 @@ export async function disconnectProvider(provider: string) {
 
   await prisma.provider.deleteMany({
     where: {
-      userId: session.id,
+      userId: user.id,
       provider,
     },
   });
 
-  await updateSession(session);
+  await updateSession(user);
 
   return {
     status: 'success',

@@ -12,9 +12,10 @@ import {
 } from '@/lib/auth/password';
 import {
   createSession,
-  deleteSession,
   getSession,
   updateSession,
+  deleteSession,
+  invalidateSessions,
 } from '@/lib/auth/session';
 import { getOAuthClient, Provider } from '@/lib/auth/oauth';
 import {
@@ -239,7 +240,9 @@ export async function verifyEmail(data: EmailVerification) {
   ]);
 
   await deleteVerificationEmailCookie();
-  await createSession(user);
+
+  const { sessionId } = await createSession(user);
+  await invalidateSessions(user.id, sessionId);
 
   redirect('/dashboard');
 }
@@ -337,7 +340,8 @@ export async function resetPassword(data: PasswordReset) {
     }),
   ]);
 
-  await createSession(user);
+  const { sessionId } = await createSession(user);
+  await invalidateSessions(user.id, sessionId);
 
   redirect('/dashboard');
 }
