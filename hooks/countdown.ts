@@ -1,57 +1,81 @@
 import * as React from 'react';
+import { z } from 'zod';
 
-const COUNTDOWN_SECONDS = 30;
+const DEFAULT_DURATION_SECONDS = 30;
 
-function calculateCountdown(reset: number) {
-  return Math.max(0, Math.floor((reset - Date.now()) / 1000));
-}
-function getCountdownFromStorage(key: string) {
-  const storedCountdown = sessionStorage.getItem(key);
-  if (!storedCountdown) return 0;
-  const countdown = Number(JSON.parse(storedCountdown));
-  if (typeof countdown !== 'number' || isNaN(countdown)) return 0;
-  return calculateCountdown(countdown);
-}
-function setCountdownToStorage(key: string, reset: number) {
-  sessionStorage.setItem(key, JSON.stringify(reset));
-}
-function removeCountdownFromStorage(key: string) {
-  sessionStorage.removeItem(key);
+interface CountdownOptions {
+  key: string;
+  duration?: number;
 }
 
-export function useCountdown(key: string) {
+export function useCountdown({
+  key,
+  duration = DEFAULT_DURATION_SECONDS,
+}: CountdownOptions) {
   const storageKey = `countdown:${key}`;
 
-  const [countdown, setCountdown] = React.useState(0);
+  const [time, setTime] = React.useState(duration);
+  const [isRunning, setIsRunning] = React.useState(false);
 
   React.useEffect(() => {
-    const countdown = getCountdownFromStorage(storageKey);
-    setCountdown(countdown);
-  }, []);
+    if (!isRunning || time <= 0) return;
 
-  React.useEffect(() => {
-    if (countdown <= 0) return;
     const timer = setInterval(() => {
-      setCountdown((current) => current - 1);
+      setTime((current) => {
+        if (current <= 1) {
+          setIsRunning(false);
+          clearStorage(storageKey);
+          return 0;
+        }
+        return current - 1;
+      });
     }, 1000);
-    return () => clearInterval(timer);
-  }, [countdown]);
 
-  function startCountdown(seconds = COUNTDOWN_SECONDS) {
-    const reset = Date.now() + seconds * 1000;
-    setCountdownToStorage(storageKey, reset);
-    const countdown = calculateCountdown(reset);
-    setCountdown(countdown);
+    return () => clearInterval(timer);
+  }, [time, isRunning]);
+
+  function start() {
+    const storedTime = getStoredTime(storageKey);
+    if (storedTime > 0) {
+      setTime(storedTime);
+    } else {
+      setTime(duration);
+      saveToStorage(storageKey, duration);
+    }
+    setIsRunning(true);
   }
 
-  function resetCountdown() {
-    setCountdown(0);
-    removeCountdownFromStorage(storageKey);
+  function reset() {
+    setTime(duration);
+    setIsRunning(false);
+    clearStorage(storageKey);
   }
 
   return {
-    countdown,
-    startCountdown,
-    resetCountdown,
+    time,
+    isRunning,
+    isComplete: time === 0,
+    start,
+    reset,
   };
+}
+
+function getStoredTime(key: string) {
+  const stored = sessionStorage.getItem(key);
+  if (!stored) return 0;
+
+  const parsed = z.coerce.number().safeParse(JSON.parse(stored));
+  if (!parsed.success) return 0;
+
+  const remaining = Math.floor((parsed.data - Date.now()) / 1000);
+  return Math.max(0, remaining);
+}
+
+function saveToStorage(key: string, time: number) {
+  const endsAt = Date.now() + time * 1000;
+  sessionStorage.setItem(key, JSON.stringify(endsAt));
+}
+
+function clearStorage(key: string) {
+  sessionStorage.removeItem(key);
 }

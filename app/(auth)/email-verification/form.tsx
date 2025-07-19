@@ -1,8 +1,11 @@
 'use client';
 
 import * as React from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
 import { REGEXP_ONLY_DIGITS } from 'input-otp';
 import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 import {
   Card,
@@ -13,16 +16,27 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormMessage,
+} from '@/components/ui/form';
+import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
 } from '@/components/ui/input-otp';
 import { Button } from '@/components/ui/button';
 import { resendEmailVerification, verifyEmail } from '@/lib/auth/actions';
+import {
+  emailVerificationSchema,
+  EmailVerification,
+} from '@/lib/auth/definitions';
 import { useCountdown } from '@/hooks/countdown';
-import { cn } from '@/lib/utils';
 
-interface EmailVerificationFormProps extends React.ComponentProps<'div'> {
+interface EmailVerificationFormProps extends React.ComponentProps<typeof Card> {
   email: string;
 }
 
@@ -31,69 +45,127 @@ export function EmailVerificationForm({
   className,
   ...props
 }: EmailVerificationFormProps) {
+  const [shouldFocus, setShouldFocus] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
-  const { countdown, startCountdown, resetCountdown } =
-    useCountdown('email_verification');
+  const countdown = useCountdown({ key: 'email_verification' });
 
-  async function handleVerification(code: string) {
-    startTransition(async () => {
-      const { error } = await verifyEmail({ email, code });
-      if (error) toast.error(error);
-    });
-  }
+  const form = useForm<EmailVerification>({
+    resolver: zodResolver(emailVerificationSchema),
+    defaultValues: {
+      email,
+      code: '',
+    },
+  });
+
+  React.useEffect(() => {
+    countdown.start();
+  }, []);
+
+  React.useEffect(() => {
+    if (shouldFocus && !isPending) {
+      form.setFocus('code');
+      setShouldFocus(false);
+    }
+  }, [shouldFocus, isPending]);
 
   async function handleResend() {
-    if (countdown > 0) return;
-    startCountdown();
+    if (countdown.isRunning) return;
+
+    countdown.start();
+
     const { error } = await resendEmailVerification(email);
     if (error) {
       toast.error(error);
-      resetCountdown();
+      countdown.reset();
     }
   }
 
+  async function onSubmit(values: EmailVerification) {
+    startTransition(async () => {
+      const { error } = await verifyEmail(values);
+      if (error) {
+        toast.error(error);
+        form.reset();
+        setShouldFocus(true);
+      }
+    });
+  }
+
   return (
-    <div className={cn('flex flex-col gap-6', className)} {...props}>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Verify your email</CardTitle>
-          <CardDescription>
-            Enter the verification code we have sent to{' '}
-            <span className="font-medium">{email}</span>.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <InputOTP
-            autoFocus
-            maxLength={6}
-            pattern={REGEXP_ONLY_DIGITS}
-            disabled={isPending}
-            onComplete={handleVerification}
-          >
-            <InputOTPGroup>
-              <InputOTPSlot index={0} />
-              <InputOTPSlot index={1} />
-              <InputOTPSlot index={2} />
-              <InputOTPSlot index={3} />
-              <InputOTPSlot index={4} />
-              <InputOTPSlot index={5} />
-            </InputOTPGroup>
-          </InputOTP>
-        </CardContent>
-        <CardFooter>
-          <CardDescription>
-            Didn't receive a code?{' '}
-            <Button
-              className="p-0 h-auto"
-              variant="link"
-              onClick={handleResend}
-              disabled={countdown > 0}
-            >
-              {countdown > 0 ? `Resend (${countdown})` : 'Resend'}
-            </Button>
-          </CardDescription>
-        </CardFooter>
-      </Card>
-    </div>
+    <Card {...props}>
+      <CardHeader>
+        <CardTitle className="text-xl">Verify your email</CardTitle>
+        <CardDescription>
+          Enter the verification code we have sent to{' '}
+          <span className="font-medium">{email}</span>.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Form {...form}>
+          <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
+            <FormField
+              control={form.control}
+              name="code"
+              render={({ field }) => (
+                <FormItem>
+                  <FormControl>
+                    <InputOTP
+                      autoFocus
+                      maxLength={6}
+                      pattern={REGEXP_ONLY_DIGITS}
+                      disabled={isPending}
+                      onComplete={form.handleSubmit(onSubmit)}
+                      {...field}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={1} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={2} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={3} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={4} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
+                        <InputOTPSlot index={5} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  </FormControl>
+                  <FormMessage />
+                  <FormDescription>
+                    Didn't receive a code?{' '}
+                    <Button
+                      className="p-0 h-auto"
+                      variant="link"
+                      disabled={countdown.isRunning}
+                      onClick={handleResend}
+                    >
+                      {countdown.isRunning
+                        ? `Resend (${countdown.time})`
+                        : 'Resend'}
+                    </Button>
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </form>
+        </Form>
+      </CardContent>
+      <CardFooter>
+        <Button
+          className="w-full"
+          disabled={isPending}
+          onClick={form.handleSubmit(onSubmit)}
+        >
+          {isPending ? <Loader2 className="animate-spin" /> : 'Continue'}
+        </Button>
+      </CardFooter>
+    </Card>
   );
 }

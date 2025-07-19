@@ -48,8 +48,7 @@ export function TwoFactorDialog({
 }: TwoFactorDialogProps) {
   const [shouldFocus, setShouldFocus] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
-  const { countdown, startCountdown, resetCountdown } =
-    useCountdown('two_factor');
+  const countdown = useCountdown({ key: 'two_factor' });
 
   const form = useForm<TwoFactor>({
     resolver: zodResolver(twoFactorSchema),
@@ -75,12 +74,14 @@ export function TwoFactorDialog({
   }, [shouldFocus, isPending]);
 
   async function handleResend() {
-    if (countdown > 0) return;
-    startCountdown();
+    if (countdown.isRunning) return;
+
+    countdown.start();
+
     const { error } = await sendTwoFactor();
     if (error) {
       toast.error(error);
-      resetCountdown();
+      countdown.reset();
     }
   }
 
@@ -149,10 +150,12 @@ export function TwoFactorDialog({
                     <Button
                       className="p-0 h-auto"
                       variant="link"
-                      disabled={countdown > 0}
+                      disabled={countdown.isRunning}
                       onClick={handleResend}
                     >
-                      {countdown > 0 ? `Resend (${countdown})` : 'Resend'}
+                      {countdown.isRunning
+                        ? `Resend (${countdown.time})`
+                        : 'Resend'}
                     </Button>
                   </FormDescription>
                 </FormItem>

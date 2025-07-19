@@ -36,8 +36,7 @@ import { useCountdown } from '@/hooks/countdown';
 export function TwoFactorForm(props: React.ComponentProps<typeof Card>) {
   const [shouldFocus, setShouldFocus] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
-  const { countdown, startCountdown, resetCountdown } =
-    useCountdown('two_factor');
+  const countdown = useCountdown({ key: 'two_factor' });
 
   const form = useForm<TwoFactor>({
     resolver: zodResolver(twoFactorSchema),
@@ -47,6 +46,10 @@ export function TwoFactorForm(props: React.ComponentProps<typeof Card>) {
   });
 
   React.useEffect(() => {
+    countdown.start();
+  }, []);
+
+  React.useEffect(() => {
     if (shouldFocus && !isPending) {
       form.setFocus('code');
       setShouldFocus(false);
@@ -54,12 +57,14 @@ export function TwoFactorForm(props: React.ComponentProps<typeof Card>) {
   }, [shouldFocus, isPending]);
 
   async function handleResend() {
-    if (countdown > 0) return;
-    startCountdown();
+    if (countdown.isRunning) return;
+
+    countdown.start();
+
     const { error } = await sendTwoFactor();
     if (error) {
       toast.error(error);
-      resetCountdown();
+      countdown.reset();
     }
   }
 
@@ -125,10 +130,12 @@ export function TwoFactorForm(props: React.ComponentProps<typeof Card>) {
                     <Button
                       className="p-0 h-auto"
                       variant="link"
-                      disabled={countdown > 0}
+                      disabled={countdown.isRunning}
                       onClick={handleResend}
                     >
-                      {countdown > 0 ? `Resend (${countdown})` : 'Resend'}
+                      {countdown.isRunning
+                        ? `Resend (${countdown.time})`
+                        : 'Resend'}
                     </Button>
                   </FormDescription>
                 </FormItem>

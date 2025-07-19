@@ -54,8 +54,7 @@ export function DeleteAccountDialog({
 }: DeleteAccountDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
-  const { countdown, startCountdown, resetCountdown } =
-    useCountdown('delete_account');
+  const countdown = useCountdown({ key: 'delete_account' });
 
   const form = useForm<DeleteAccount>({
     resolver: zodResolver(deleteAccountSchema),
@@ -72,12 +71,14 @@ export function DeleteAccountDialog({
   }
 
   async function handleResend() {
-    if (countdown > 0) return;
-    startCountdown();
+    if (countdown.isRunning) return;
+
+    countdown.start();
+
     const { error } = await sendDeleteAccount();
     if (error) {
       toast.error(error);
-      resetCountdown();
+      countdown.reset();
     }
   }
 
@@ -138,9 +139,11 @@ export function DeleteAccountDialog({
                       className="p-0 h-auto"
                       variant="link"
                       onClick={handleResend}
-                      disabled={countdown > 0}
+                      disabled={countdown.isRunning}
                     >
-                      {countdown > 0 ? `Resend (${countdown})` : 'Resend'}
+                      {countdown.isRunning
+                        ? `Resend (${countdown.time})`
+                        : 'Resend'}
                     </Button>
                   </FormDescription>
                 </FormItem>
