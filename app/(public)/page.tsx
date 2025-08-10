@@ -1,28 +1,25 @@
-import { Button } from '@/components/ui/button';
-import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center sm:items-start min-h-[calc(100dvh-114px)]">
-      <div className="border-dashed border-b w-full">
-        <div className="container border-dashed border-x flex flex-col gap-4 py-12">
-          <h1 className="text-2xl font-bold leading-tight tracking-tighter sm:text-3xl md:text-4xl lg:leading-[1.1]">
-            Home – Public Route
-          </h1>
+    <main className="container py-24">
+      <div className="flex flex-col items-center text-center gap-4 mx-auto">
+        <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">
+          Next.js Authentication
+        </h1>
+        <p className="text-lg text-muted-foreground max-w-2xl text-balance">
+          A complete authentication solution with email verification, password
+          reset, two-factor authentication, and OAuth providers.
+        </p>
+        <div className="flex flex-col sm:flex-row gap-4 mt-2">
+          <Button size="sm" asChild>
+            <Link href="/dashboard">Go to Dashboard</Link>
+          </Button>
+          <Button variant="outline" size="sm" asChild>
+            <Link href="/signup">Get Started</Link>
+          </Button>
         </div>
-      </div>
-      <div className="container border-dashed border-x py-12 h-full flex-1">
-        <Button className="group w-fit" asChild>
-          <Link href="/dashboard">
-            Dashboard
-            <ArrowRight
-              className="transition-transform group-hover:translate-x-0.5"
-              size={16}
-              aria-hidden="true"
-            />
-          </Link>
-        </Button>
       </div>
     </main>
   );

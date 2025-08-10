@@ -1,7 +1,7 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Loader2 } from 'lucide-react';
+import * as React from "react";
+import { Loader2 } from "lucide-react";
 
 import {
   Dialog,
@@ -10,13 +10,13 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import Google from '@/components/icons/google';
-import GitHub from '@/components/icons/github';
-import { Provider } from '@/lib/auth/oauth';
-import { oAuthSignIn } from '@/lib/auth/actions';
-import { disconnectProvider } from './actions';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import Google from "@/components/icons/google";
+import GitHub from "@/components/icons/github";
+import { Provider } from "@/lib/auth/oauth";
+import { oAuthSignIn } from "@/lib/auth/actions";
+import { disconnectProvider } from "./actions";
 
 interface ConnectAccountDialogProps
   extends React.ComponentProps<typeof Dialog> {
@@ -31,7 +31,7 @@ export function ConnectAccountDialog({
   return (
     <Dialog {...props}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Connect your account</DialogTitle>
           <DialogDescription>
@@ -39,7 +39,7 @@ export function ConnectAccountDialog({
             easier sign-in options.
           </DialogDescription>
         </DialogHeader>
-        <div className="flex flex-col gap-3">
+        <div className="border divide-y rounded-lg">
           <OAuthProvider provider="google" providers={providers}>
             <Google className="size-4" />
             Google
@@ -54,7 +54,7 @@ export function ConnectAccountDialog({
   );
 }
 
-interface OAuthProviderProps extends React.ComponentProps<'label'> {
+interface OAuthProviderProps extends React.ComponentProps<"label"> {
   provider: Provider;
   providers: string[];
 }
@@ -71,21 +71,16 @@ function OAuthProvider({ provider, providers, children }: OAuthProviderProps) {
   }
 
   return (
-    <label className="flex items-center justify-between cursor-pointer">
-      <div className="flex items-center gap-2 text-sm font-medium select-none">
+    <div className="flex items-center justify-between p-4">
+      <div className="flex items-center gap-2 text-sm font-medium">
         {children}
       </div>
-      <Button
-        variant="outline"
-        size="sm"
-        disabled={isPending}
-        onClick={handleClick}
-      >
+      <Button size="sm" disabled={isPending} onClick={handleClick}>
         {(() => {
           if (isPending) return <Loader2 className="animate-spin" />;
-          return isConnected ? 'Disconnect' : 'Connect';
+          return isConnected ? "Disconnect" : "Connect";
         })()}
       </Button>
-    </label>
+    </div>
   );
 }

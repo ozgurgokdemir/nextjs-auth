@@ -1,5 +1,4 @@
-import { Header } from '@/app/(private)/header';
-import { Footer } from '@/components/footer';
+import { Header } from "@/app/(private)/header";
 
 type PrivateLayoutProps = {
   children: React.ReactNode;
@@ -10,7 +9,6 @@ export default function PrivateLayout({ children }: PrivateLayoutProps) {
     <>
       <Header />
       {children}
-      <Footer />
     </>
   );
 }

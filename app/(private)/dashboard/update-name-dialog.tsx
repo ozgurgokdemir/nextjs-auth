@@ -1,31 +1,32 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Loader2 } from 'lucide-react';
+import * as React from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Loader2 } from "lucide-react";
 
 import {
   Dialog,
+  DialogClose,
   DialogContent,
   DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { nameSchema } from '@/lib/auth/definitions';
-import { updateUserName } from './actions';
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { nameSchema } from "@/lib/auth/definitions";
+import { updateUserName } from "./actions";
 
 const updateNameSchema = z.object({
   name: nameSchema,
@@ -54,15 +55,15 @@ export function UpdateNameDialog({
   async function onSubmit({ name }: UpdateName) {
     startTransition(async () => {
       const { status, message } = await updateUserName(name);
-      if (status === 'error') form.setError('name', { message });
-      if (status === 'success') setOpen(false);
+      if (status === "error") form.setError("name", { message });
+      if (status === "success") setOpen(false);
     });
   }
 
   return (
     <Dialog open={open} onOpenChange={setOpen} {...props}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Update your name</DialogTitle>
           <DialogDescription>
@@ -71,12 +72,15 @@ export function UpdateNameDialog({
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
             <FormField
               control={form.control}
               name="name"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="grid gap-2">
                   <FormControl>
                     <Input
                       id="name"
@@ -89,17 +93,18 @@ export function UpdateNameDialog({
                 </FormItem>
               )}
             />
+            <div className="flex gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="outline" className="flex-1">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" className="flex-1" disabled={isPending}>
+                {isPending ? <Loader2 className="animate-spin" /> : "Update"}
+              </Button>
+            </div>
           </form>
         </Form>
-        <DialogFooter>
-          <Button
-            className="w-full"
-            disabled={isPending}
-            onClick={form.handleSubmit(onSubmit)}
-          >
-            {isPending ? <Loader2 className="animate-spin" /> : 'Update name'}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

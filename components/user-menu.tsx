@@ -1,28 +1,19 @@
-import { ChevronDownIcon, ShieldUser, LogOut } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
+import { LogOut } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuPortal,
-  DropdownMenuRadioGroup,
-  DropdownMenuRadioItem,
   DropdownMenuSeparator,
-  DropdownMenuSub,
-  DropdownMenuSubContent,
-  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
-import { signOut } from '@/lib/auth/actions';
-import { getUser } from '@/lib/db/queries';
-import { updateRole } from '@/actions/update-role';
+} from "@/components/ui/dropdown-menu";
+import { signOut } from "@/lib/auth/actions";
+import { getUser } from "@/lib/db/queries";
 
 export async function UserMenu() {
   const user = await getUser();
-
   if (!user) return;
 
   return (
@@ -33,17 +24,12 @@ export async function UserMenu() {
             <AvatarImage src={user.avatar ?? undefined} alt="Profile image" />
             <AvatarFallback>
               {user.name
-                .split(' ')
+                .split(" ")
                 .slice(0, 2)
                 .map((string) => string[0].toUpperCase())
-                .join('')}
+                .join("")}
             </AvatarFallback>
           </Avatar>
-          <ChevronDownIcon
-            size={16}
-            className="opacity-60"
-            aria-hidden="true"
-          />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-auto min-w-44 max-w-64">
@@ -56,37 +42,9 @@ export async function UserMenu() {
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuGroup>
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger className="gap-2">
-              <ShieldUser
-                size={16}
-                className="text-muted-foreground"
-                aria-hidden="true"
-              />
-              <span>Switch Role</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuPortal>
-              <DropdownMenuSubContent>
-                <DropdownMenuRadioGroup
-                  value={user.role}
-                  onValueChange={updateRole as (value: string) => void}
-                >
-                  <DropdownMenuRadioItem value="USER">
-                    User
-                  </DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="ADMIN">
-                    Admin
-                  </DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuSubContent>
-            </DropdownMenuPortal>
-          </DropdownMenuSub>
-        </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onSelect={signOut}>
+        <DropdownMenuItem className="cursor-pointer" onSelect={signOut}>
           <LogOut size={16} aria-hidden="true" />
-          <span>Sign Out</span>
+          Sign Out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

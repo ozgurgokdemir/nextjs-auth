@@ -1,12 +1,12 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { REGEXP_ONLY_DIGITS } from 'input-otp';
-import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import * as React from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -17,7 +17,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
@@ -25,16 +25,16 @@ import {
   FormField,
   FormItem,
   FormMessage,
-} from '@/components/ui/form';
+} from "@/components/ui/form";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from '@/components/ui/input-otp';
-import { Button } from '@/components/ui/button';
-import { otpSchema } from '@/lib/auth/definitions';
-import { useCountdown } from '@/hooks/countdown';
-import { deleteAccount, sendDeleteAccount } from './actions';
+} from "@/components/ui/input-otp";
+import { Button } from "@/components/ui/button";
+import { otpSchema } from "@/lib/auth/definitions";
+import { useCountdown } from "@/hooks/countdown";
+import { deleteAccount, sendDeleteAccount } from "./actions";
 
 let initialOpen = true;
 
@@ -54,12 +54,12 @@ export function DeleteAccountDialog({
 }: DeleteAccountDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
-  const countdown = useCountdown({ key: 'delete_account' });
+  const countdown = useCountdown({ key: "delete_account" });
 
   const form = useForm<DeleteAccount>({
     resolver: zodResolver(deleteAccountSchema),
     defaultValues: {
-      code: '',
+      code: "",
     },
   });
 
@@ -98,73 +98,87 @@ export function DeleteAccountDialog({
       {...props}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Detele your account</DialogTitle>
           <DialogDescription className="line-clamp-2">
             This action cannot be undone. To confirm, Please enter the
-            verification code we have sent to{' '}
+            verification code we have sent to{" "}
             <span className="font-medium break-all">{email}</span>.
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
             <FormField
               control={form.control}
               name="code"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col items-center">
                   <FormControl>
                     <InputOTP
                       autoFocus
                       maxLength={6}
                       pattern={REGEXP_ONLY_DIGITS}
                       disabled={isPending}
+                      onComplete={form.handleSubmit(onSubmit)}
                       {...field}
                     >
                       <InputOTPGroup>
                         <InputOTPSlot index={0} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
                         <InputOTPSlot index={1} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
                         <InputOTPSlot index={2} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
                         <InputOTPSlot index={3} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
                         <InputOTPSlot index={4} />
+                      </InputOTPGroup>
+                      <InputOTPGroup>
                         <InputOTPSlot index={5} />
                       </InputOTPGroup>
                     </InputOTP>
                   </FormControl>
                   <FormMessage />
-                  <FormDescription>
-                    Didn't receive a code?{' '}
-                    <Button
-                      className="p-0 h-auto"
-                      variant="link"
-                      onClick={handleResend}
-                      disabled={countdown.isRunning}
-                    >
-                      {countdown.isRunning
-                        ? `Resend (${countdown.time})`
-                        : 'Resend'}
-                    </Button>
-                  </FormDescription>
                 </FormItem>
               )}
             />
+            <div className="flex gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="outline" className="flex-1">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button
+                type="submit"
+                className="flex-1"
+                variant="destructive"
+                disabled={isPending}
+              >
+                {isPending ? <Loader2 className="animate-spin" /> : "Delete"}
+              </Button>
+            </div>
           </form>
         </Form>
         <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline" className="flex-1">
-              Cancel
+          <DialogDescription>
+            Didn't receive a code?{" "}
+            <Button
+              className="p-0 h-auto font-normal"
+              variant="link"
+              onClick={handleResend}
+              disabled={countdown.isRunning}
+            >
+              {countdown.isRunning ? `Resend (${countdown.time})` : "Resend"}
             </Button>
-          </DialogClose>
-          <Button
-            className="flex-1"
-            variant="destructive"
-            disabled={isPending}
-            onClick={form.handleSubmit(onSubmit)}
-          >
-            {isPending ? <Loader2 className="animate-spin" /> : 'Delete'}
-          </Button>
+          </DialogDescription>
         </DialogFooter>
       </DialogContent>
     </Dialog>

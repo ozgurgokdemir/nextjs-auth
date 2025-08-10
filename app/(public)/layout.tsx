@@ -1,5 +1,4 @@
-import { Header } from '@/app/(public)/header';
-import { Footer } from '@/components/footer';
+import { Header } from "@/app/(public)/header";
 
 type PublicLayoutProps = {
   children: React.ReactNode;
@@ -10,7 +9,6 @@ export default function PublicLayout({ children }: PublicLayoutProps) {
     <>
       <Header />
       {children}
-      <Footer />
     </>
   );
 }

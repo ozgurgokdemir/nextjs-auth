@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Loader2 } from 'lucide-react';
+import * as React from "react";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { Loader2 } from "lucide-react";
 
 import {
   Dialog,
@@ -15,19 +15,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
+} from "@/components/ui/dialog";
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from '@/components/ui/form';
-import { PasswordInput } from '@/components/ui/password-input';
-import { Button } from '@/components/ui/button';
-import { passwordSchema } from '@/lib/auth/definitions';
-import { updateUserPassword } from './actions';
-import { useTwoFactor } from '@/components/two-factor-provider';
+} from "@/components/ui/form";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Button } from "@/components/ui/button";
+import { passwordSchema } from "@/lib/auth/definitions";
+import { updateUserPassword } from "./actions";
+import { useTwoFactor } from "@/components/two-factor-provider";
 
 const updatePasswordSchema = z.object({
   password: passwordSchema,
@@ -50,7 +50,7 @@ export function UpdatePasswordDialog({
   const form = useForm<UpdatePassword>({
     resolver: zodResolver(updatePasswordSchema),
     defaultValues: {
-      password: '',
+      password: "",
     },
   });
 
@@ -65,13 +65,13 @@ export function UpdatePasswordDialog({
         startVerification(async () => {
           startTransition(async () => {
             const { status, message } = await updateUserPassword(password);
-            if (status === 'error') form.setError('password', { message });
-            if (status === 'success') setOpen(false);
+            if (status === "error") form.setError("password", { message });
+            if (status === "success") setOpen(false);
           });
         });
       }
-      if (status === 'error') form.setError('password', { message });
-      if (status === 'success') setOpen(false);
+      if (status === "error") form.setError("password", { message });
+      if (status === "success") setOpen(false);
     });
   }
 
@@ -85,31 +85,34 @@ export function UpdatePasswordDialog({
       {...props}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
-            {hasPassword ? 'Change your password' : 'Set your password'}
+            {hasPassword ? "Change your password" : "Set your password"}
           </DialogTitle>
           <DialogDescription>
             {hasPassword
-              ? 'Update your password to keep your account secure. Make sure it’s strong and easy for you to remember.'
-              : 'Create a secure password to protect your account. Make sure it’s strong and easy for you to remember.'}
+              ? "Update your password to keep your account secure. Make sure it’s strong and easy for you to remember."
+              : "Create a secure password to protect your account. Make sure it’s strong and easy for you to remember."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="flex flex-col gap-6"
+          >
             <FormField
               control={form.control}
               name="password"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="grid gap-2">
                   <FormControl>
                     <PasswordInput
                       id="password"
                       placeholder={
                         hasPassword
-                          ? 'Enter your new password'
-                          : 'Enter your password'
+                          ? "Enter your new password"
+                          : "Enter your password"
                       }
                       autoComplete="new-password"
                       autoFocus
@@ -120,25 +123,21 @@ export function UpdatePasswordDialog({
                 </FormItem>
               )}
             />
+            <div className="flex gap-2">
+              <DialogClose asChild>
+                <Button type="button" variant="outline" className="flex-1">
+                  Cancel
+                </Button>
+              </DialogClose>
+              <Button type="submit" className="flex-1" disabled={isPending}>
+                {(() => {
+                  if (isPending) return <Loader2 className="animate-spin" />;
+                  return hasPassword ? "Update" : "Create";
+                })()}
+              </Button>
+            </div>
           </form>
         </Form>
-        <DialogFooter>
-          <DialogClose asChild>
-            <Button type="button" variant="outline" className="flex-1">
-              Cancel
-            </Button>
-          </DialogClose>
-          <Button
-            className="flex-1"
-            disabled={isPending}
-            onClick={form.handleSubmit(onSubmit)}
-          >
-            {(() => {
-              if (isPending) return <Loader2 className="animate-spin" />;
-              return hasPassword ? 'Update' : 'Create';
-            })()}
-          </Button>
-        </DialogFooter>
       </DialogContent>
     </Dialog>
   );

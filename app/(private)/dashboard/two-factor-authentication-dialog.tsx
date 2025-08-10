@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import * as React from 'react';
-import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
+import * as React from "react";
+import { Loader2 } from "lucide-react";
+import { toast } from "sonner";
 
 import {
   Dialog,
@@ -13,10 +13,10 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { useTwoFactor } from '@/components/two-factor-provider';
-import { disableTwoFactor, enableTwoFactor } from './actions';
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { useTwoFactor } from "@/components/two-factor-provider";
+import { disableTwoFactor, enableTwoFactor } from "./actions";
 
 interface TwoFactorAuthenticationDialogProps
   extends React.ComponentProps<typeof Dialog> {
@@ -41,29 +41,29 @@ export function TwoFactorAuthenticationDialog({
           startVerification(async () => {
             startTransition(async () => {
               const { status, message } = await disableTwoFactor();
-              if (status === 'error') {
+              if (status === "error") {
                 toast.error(message);
               }
-              if (status === 'success') {
+              if (status === "success") {
                 setOpen(false);
                 toast.success(message);
               }
             });
           });
         }
-        if (status === 'error') {
+        if (status === "error") {
           toast.error(message);
         }
-        if (status === 'success') {
+        if (status === "success") {
           setOpen(false);
           toast.success(message);
         }
       } else {
         const { status, message } = await enableTwoFactor();
-        if (status === 'error') {
+        if (status === "error") {
           toast.error(message);
         }
-        if (status === 'success') {
+        if (status === "success") {
           setOpen(false);
           toast.success(message);
         }
@@ -74,19 +74,19 @@ export function TwoFactorAuthenticationDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen} {...props}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>
             {`${
-              isTwoFactorEnabled ? 'Disable' : 'Enable'
+              isTwoFactorEnabled ? "Disable" : "Enable"
             } two-factor authentication`}
           </DialogTitle>
           <DialogDescription>
             {`Two-factor authentication adds an extra layer of security to your
-            account by requiring a verification code when you sign in. ${
+            account. ${
               isTwoFactorEnabled
-                ? 'Are you sure you want to disable it?'
-                : 'Would you like to enable it?'
+                ? "Are you sure you want to disable it?"
+                : "Would you like to enable it?"
             }`}
           </DialogDescription>
         </DialogHeader>
@@ -103,7 +103,7 @@ export function TwoFactorAuthenticationDialog({
           >
             {(() => {
               if (isPending) return <Loader2 className="animate-spin" />;
-              return isTwoFactorEnabled ? 'Disable' : 'Enable';
+              return isTwoFactorEnabled ? "Disable" : "Enable";
             })()}
           </Button>
         </DialogFooter>
