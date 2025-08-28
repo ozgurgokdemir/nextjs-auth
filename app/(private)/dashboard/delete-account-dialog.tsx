@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
-import { Loader2 } from "lucide-react";
-import { toast } from "sonner";
+import * as React from 'react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import {
   Dialog,
@@ -17,24 +17,23 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
+} from '@/components/ui/dialog';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui/input-otp";
-import { Button } from "@/components/ui/button";
-import { otpSchema } from "@/lib/auth/definitions";
-import { useCountdown } from "@/hooks/countdown";
-import { deleteAccount, sendDeleteAccount } from "./actions";
+} from '@/components/ui/input-otp';
+import { Button } from '@/components/ui/button';
+import { otpSchema } from '@/lib/auth/definitions';
+import { useCountdown } from '@/hooks/countdown';
+import { deleteAccount, sendDeleteAccount } from './actions';
 
 let initialOpen = true;
 
@@ -54,12 +53,12 @@ export function DeleteAccountDialog({
 }: DeleteAccountDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
-  const countdown = useCountdown({ key: "delete_account" });
+  const countdown = useCountdown({ key: 'delete_account' });
 
   const form = useForm<DeleteAccount>({
     resolver: zodResolver(deleteAccountSchema),
     defaultValues: {
-      code: "",
+      code: '',
     },
   });
 
@@ -103,7 +102,7 @@ export function DeleteAccountDialog({
           <DialogTitle>Detele your account</DialogTitle>
           <DialogDescription className="line-clamp-2">
             This action cannot be undone. To confirm, Please enter the
-            verification code we have sent to{" "}
+            verification code we have sent to{' '}
             <span className="font-medium break-all">{email}</span>.
           </DialogDescription>
         </DialogHeader>
@@ -162,21 +161,21 @@ export function DeleteAccountDialog({
                 variant="destructive"
                 disabled={isPending}
               >
-                {isPending ? <Loader2 className="animate-spin" /> : "Delete"}
+                {isPending ? <Loader2 className="animate-spin" /> : 'Delete'}
               </Button>
             </div>
           </form>
         </Form>
         <DialogFooter>
           <DialogDescription>
-            Didn't receive a code?{" "}
+            {`Didn't receive a code?`}{' '}
             <Button
               className="p-0 h-auto font-normal"
               variant="link"
               onClick={handleResend}
               disabled={countdown.isRunning}
             >
-              {countdown.isRunning ? `Resend (${countdown.time})` : "Resend"}
+              {countdown.isRunning ? `Resend (${countdown.time})` : 'Resend'}
             </Button>
           </DialogDescription>
         </DialogFooter>

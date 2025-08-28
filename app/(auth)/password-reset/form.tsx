@@ -1,11 +1,11 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import * as React from 'react';
+import { z } from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 import {
   Form,
@@ -13,18 +13,18 @@ import {
   FormField,
   FormItem,
   FormMessage,
-} from "@/components/ui/form";
-import { Button } from "@/components/ui/button";
+} from '@/components/ui/form';
+import { Button } from '@/components/ui/button';
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { sendPasswordReset } from "@/lib/auth/actions";
-import { emailSchema } from "@/lib/auth/definitions";
+} from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { sendPasswordReset } from '@/lib/auth/actions';
+import { emailSchema } from '@/lib/auth/definitions';
 
 const passwordResetSchema = z.object({
   email: emailSchema,
@@ -37,15 +37,15 @@ export function PasswordResetForm(props: React.ComponentProps<typeof Card>) {
   const form = useForm<PasswordReset>({
     resolver: zodResolver(passwordResetSchema),
     defaultValues: {
-      email: "",
+      email: '',
     },
   });
 
   async function onSubmit({ email }: PasswordReset) {
     startTransition(async () => {
       const { status, message } = await sendPasswordReset(email);
-      if (status === "error") toast.error(message);
-      if (status === "success") toast.success(message);
+      if (status === 'error') toast.error(message);
+      if (status === 'success') toast.success(message);
     });
   }
 
@@ -54,8 +54,8 @@ export function PasswordResetForm(props: React.ComponentProps<typeof Card>) {
       <CardHeader>
         <CardTitle>Reset your password</CardTitle>
         <CardDescription>
-          Enter your email address and we'll send you a link to reset your
-          password.
+          {`Enter your email address and we'll send you a link to reset your
+          password.`}
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -84,7 +84,7 @@ export function PasswordResetForm(props: React.ComponentProps<typeof Card>) {
               )}
             />
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? <Loader2 className="animate-spin" /> : "Send Link"}
+              {isPending ? <Loader2 className="animate-spin" /> : 'Send Link'}
             </Button>
           </form>
         </Form>

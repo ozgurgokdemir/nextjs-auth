@@ -1,12 +1,12 @@
-"use client";
+'use client';
 
-import * as React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { REGEXP_ONLY_DIGITS } from "input-otp";
+import * as React from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { REGEXP_ONLY_DIGITS } from 'input-otp';
 
-import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { toast } from 'sonner';
+import { Loader2 } from 'lucide-react';
 
 import {
   Card,
@@ -15,26 +15,26 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card";
+} from '@/components/ui/card';
 import {
   Form,
   FormControl,
   FormField,
   FormItem,
   FormMessage,
-} from "@/components/ui/form";
+} from '@/components/ui/form';
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui/input-otp";
-import { Button } from "@/components/ui/button";
-import { resendEmailVerification, verifyEmail } from "@/lib/auth/actions";
+} from '@/components/ui/input-otp';
+import { Button } from '@/components/ui/button';
+import { resendEmailVerification, verifyEmail } from '@/lib/auth/actions';
 import {
   emailVerificationSchema,
   EmailVerification,
-} from "@/lib/auth/definitions";
-import { useCountdown } from "@/hooks/countdown";
+} from '@/lib/auth/definitions';
+import { useCountdown } from '@/hooks/countdown';
 
 interface EmailVerificationFormProps extends React.ComponentProps<typeof Card> {
   email: string;
@@ -46,13 +46,13 @@ export function EmailVerificationForm({
 }: EmailVerificationFormProps) {
   const [shouldFocus, setShouldFocus] = React.useState(false);
   const [isPending, startTransition] = React.useTransition();
-  const countdown = useCountdown({ key: "email_verification" });
+  const countdown = useCountdown({ key: 'email_verification' });
 
   const form = useForm<EmailVerification>({
     resolver: zodResolver(emailVerificationSchema),
     defaultValues: {
       email,
-      code: "",
+      code: '',
     },
   });
 
@@ -62,7 +62,7 @@ export function EmailVerificationForm({
 
   React.useEffect(() => {
     if (shouldFocus && !isPending) {
-      form.setFocus("code");
+      form.setFocus('code');
       setShouldFocus(false);
     }
   }, [shouldFocus, isPending]);
@@ -95,7 +95,7 @@ export function EmailVerificationForm({
       <CardHeader>
         <CardTitle>Verify your email</CardTitle>
         <CardDescription>
-          Enter the verification code we have sent to{" "}
+          Enter the verification code we have sent to{' '}
           <span className="font-medium">{email}</span>.
         </CardDescription>
       </CardHeader>
@@ -144,21 +144,21 @@ export function EmailVerificationForm({
               )}
             />
             <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? <Loader2 className="animate-spin" /> : "Continue"}
+              {isPending ? <Loader2 className="animate-spin" /> : 'Continue'}
             </Button>
           </form>
         </Form>
       </CardContent>
       <CardFooter>
         <CardDescription>
-          Didn't receive a code?{" "}
+          {`Didn't receive a code?`}{' '}
           <Button
             className="p-0 h-auto font-normal"
             variant="link"
             disabled={countdown.isRunning}
             onClick={handleResend}
           >
-            {countdown.isRunning ? `Resend (${countdown.time})` : "Resend"}
+            {countdown.isRunning ? `Resend (${countdown.time})` : 'Resend'}
           </Button>
         </CardDescription>
       </CardFooter>

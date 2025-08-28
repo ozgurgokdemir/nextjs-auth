@@ -1,6 +1,5 @@
 import 'server-only';
 
-import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { z } from 'zod';
 import { redis } from '@/lib/db/redis';
